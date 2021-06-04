@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,7 @@ export class UsersService {
             const user = new User();
             user.email = email;
             user.password = password;
-            user.role = 'user';
+            user.role = 'USER';
             user.name = name;
             user.birthdate = birthdate;
       
@@ -33,5 +34,23 @@ export class UsersService {
     async getUserByEmail(email: string) {
         const user = await this.userRepository.findOne({ email });
         return user;
+    }
+
+    async updateUser(id: number, dto: UpdateUserDto) {
+        const {name, birthdate}  = dto;
+        const user = await this.userRepository.findOne({ id });
+
+        if (!user) {
+            throw new HttpException('No such user!', HttpStatus.NOT_FOUND);
+        }
+
+        user.name = name;
+        user.birthdate = birthdate;
+
+        try {
+            return this.userRepository.save(user);
+        } catch (error) {
+              throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
