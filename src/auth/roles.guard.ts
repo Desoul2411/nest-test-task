@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, U
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { Observable } from "rxjs";
-import { ROLE_KEY } from './rolse.auth.decorator';
+import { ROLE_KEY } from './roles.auth.decorator';
 
 
 @Injectable()

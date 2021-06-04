@@ -1,0 +1,14 @@
+{
+    "type": "mysql",
+    "host": "172.21.0.2",
+    "port": 3306,
+    "username": "Desoul2411",
+    "password": "32167", 
+    "database": "test_db",
+    "entities": ["src/**/entities/*.ts"],
+    "migrations": ["src/migrations/**/*.ts"],
+    "synchronize": false,
+    "cli": {
+      "migrationsDir": "src/migrations"
+   }
+  }

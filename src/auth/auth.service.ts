@@ -29,6 +29,7 @@ export class AuthService {
         return 'Registered successfully!'
     }
 
+
     private generateToken(user: User) {
         const payload = {userId: user.id, role: user.role};
         return {

@@ -26,11 +26,4 @@ export class User {
 
     @Column()
     birthdate: string;
-
- /*    @OneToOne(() => CapitalLocation, capital_location => capital_location.country, {cascade: true})
-    @JoinColumn()
-    capital_location: Promise<CapitalLocation>;
-
-    @OneToMany(type => Localization, (localization) => localization.country, {cascade: true})
-    localizations: Promise<Localization[]>; */
 }

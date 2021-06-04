@@ -15,11 +15,9 @@ import { AuthModule } from './auth/auth.module';
       password: '32167', //process.env.MYSQL_PASSWORD,
       database: 'test_db',//process.env.MYSQL_DATABASE,
       entities: [User],
-      migrations: ['src/migrations/**/*.ts'],
       synchronize: false,
-      dropSchema: false,
+      dropSchema: true,
       cli: {
-        "entitiesDir": "src/user/entity",
         "migrationsDir": "src/migrations",
      }
     }),
