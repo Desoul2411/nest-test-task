@@ -8,7 +8,7 @@ export class LoginUserDto {
     @IsNotEmpty({message: 'The field must not be empty!'})
     readonly email: string;
 
-    @ApiProperty({ example: 'Of0klnHCtNmzdO6qCNDejkfebDCGTh1HdESK7uf1Awl3a', description: 'user password hashed' })
+    @ApiProperty({ example: '232chipsvcS', description: 'user password hashed' })
     @IsString({message: 'must be a string'})
     @IsNotEmpty({message: 'The field must not be empty!'})
     @Length(5,14, {message: 'must be between 5 and 14 characters'})
