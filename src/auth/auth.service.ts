@@ -23,10 +23,15 @@ export class AuthService {
         if (candidate) {
             throw new HttpException("User with this email already exists", HttpStatus.BAD_REQUEST);
         }
-        const passwordHashed = await bcrypt.hash(userDto.password, 5);
-        const user = await this.userService.createUser({...userDto, password: passwordHashed});
 
-        return 'Registered successfully!'
+        try {
+            const passwordHashed = await bcrypt.hash(userDto.password, 5);
+            await this.userService.createUser({...userDto, password: passwordHashed});
+
+            return 'Registered successfully!'
+        } catch (error) {
+            throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 

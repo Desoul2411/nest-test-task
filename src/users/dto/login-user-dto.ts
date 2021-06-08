@@ -10,7 +10,7 @@ export class LoginUserDto {
 
     @ApiProperty({ example: '232chipsvcS', description: 'user password hashed' })
     @IsString({message: 'must be a string'})
-    @IsNotEmpty({message: 'The field must not be empty!'})
+    @IsNotEmpty({message: 'the field must not be empty!'})
     @Length(5,14, {message: 'must be between 5 and 14 characters'})
     readonly password: string;
 }

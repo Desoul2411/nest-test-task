@@ -9,8 +9,8 @@ export class CreateUserDto {
     readonly email: string;
 
     @ApiProperty({ example: 'asdw33fdfgFss', description: 'user password hashed' })
-    @IsString({message: 'Must be a string'})
-    @IsNotEmpty({message: 'The field must not be empty!'})
+    @IsString({message: 'must be a string'})
+    @IsNotEmpty({message: 'the field must not be empty!'})
     @Length(5,14, {message: 'must be between 5 and 14 characters'})
     readonly password: string;
 /*     readonly role: string; */
