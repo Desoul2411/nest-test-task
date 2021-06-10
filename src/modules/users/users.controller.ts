@@ -89,12 +89,11 @@ export class UsersController {
   })
   @Roles("ADMIN")
   @UseGuards(RolesGuard)
-  @UsePipes(ValidationPipe)
   // @UseFilters(new HttpExceptionFilter())
   @Put(":id")
   async update(
     @Param("id") id: string,
-    @Body() updateUserDto: UpdateUserDto
+    @Body(new ValidationPipe()) updateUserDto: UpdateUserDto
   ) {
     return this.userService.updateUser(id, updateUserDto);
   }

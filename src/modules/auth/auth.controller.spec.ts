@@ -7,7 +7,7 @@ import { UsersService } from '../users/users.service';
 import { generateString } from '../../utils/generators.utils';
 import { Test } from '@nestjs/testing';
 import { JwtService } from "@nestjs/jwt";
-//import { ValidationException } from "../../exceptions/validation.exception";
+
 
 describe('AuthController', () => {
   let authController: AuthController;

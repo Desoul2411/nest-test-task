@@ -6,8 +6,7 @@ import { UsersService } from './users.service';
 import { generateString } from '../../utils/generators.utils';
 import { Test } from '@nestjs/testing';
 import { JwtService } from "@nestjs/jwt";
-import { RolesGuard } from '../auth/roles.guard';
-import { ValidationException } from "../../exceptions/validation.exception";
+
 
 describe('UsersController', () => {
     let usersController: UsersController;
