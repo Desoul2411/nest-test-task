@@ -1,11 +1,12 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { forwardRef, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import { CanActivate, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { generateString } from '../../utils/generators.utils';
 import { Test } from '@nestjs/testing';
 import { JwtService } from "@nestjs/jwt";
+import { RolesGuard } from '../auth/roles.guard';
 import { ValidationException } from "../../exceptions/validation.exception";
 
 describe('UsersController', () => {
@@ -14,6 +15,7 @@ describe('UsersController', () => {
     const mockValue = {};
 
     const createUserMock = jest.fn();
+    const getAllUserMock = jest.fn();
     const updateUserMock = jest.fn();
   
     let passwordGenerated = generateString(64);
@@ -48,112 +50,151 @@ describe('UsersController', () => {
       birthdate: "20.11.1995"
     };
 
-    const validationMessageHttpExceptionExample = "password - must be between 5 and 14 characters, Must be a string";
-  
-    beforeEach(async () => {
-      const moduleRef = await Test.createTestingModule({
-        providers: [
-          UsersController,
-          UsersService,
-          {
-            provide: getRepositoryToken(User),
-            useValue: mockValue,
-          },
-          {
-            provide: UsersService,
-            useValue: {
-              updateUser: updateUserMock,
-              createUser: createUserMock
-            },
-          },
-          JwtService,
-          {
-            provide: JwtService,
-            useValue: mockValue
-          }
-          
-        ],
-      }).compile();
-  
-      usersController = moduleRef.get<UsersController>(UsersController);
-      passwordGenerated = generateString(64);
-    });
-  
+    const getAllUsersExpextedResult = [
+      {
+        email : "Desoul40@mail.ru",
+        password: passwordGenerated,
+        role: "USER",
+        name : "John",
+        birthdate: "20.11.1995"
+      },
+      {
+        email : "Jack25@mail.ru",
+        password: passwordGenerated,
+        role: "USER",
+        name : "Jack",
+        birthdate: "14.11.1990"
+      }
+  ]
 
-    describe('create', () => {
-      it('should be called with passed data once', async () => {
-        await usersController.create(createUserDataDto);
-        expect(createUserMock).toHaveBeenCalledTimes(1);
-        expect(createUserMock).toHaveBeenCalledWith(createUserDataDto);
-      });
-  
-      it('should return created user object', async () => {
-        createUserMock.mockResolvedValue(createdUserExpectedResult);
-        expect(await usersController.create(createUserDataDto)).toEqual(
-          createdUserExpectedResult,
-        );
-      });
+  const validationMessageHttpExceptionExample = "password - must be between 5 and 14 characters, Must be a string";
 
-      it('should throw an error with status 500 and validation message - fail', async () => {
-        try {
-          createUserMock.mockResolvedValue(new HttpException("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
-        } catch (e) {
-          expect(e.message).toBe('INTERNAL_SERVER_ERROR');
-          expect(e.status).toBe(500);
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        UsersController,
+        UsersService,
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockValue,
+        },
+        {
+          provide: UsersService,
+          useValue: {
+            createUser: createUserMock,
+            getAllUsers: getAllUserMock,
+            updateUser: updateUserMock,
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: mockValue
         }
-      });
+      ],
+    })
+    .compile();
 
+    usersController = moduleRef.get<UsersController>(UsersController);
+    passwordGenerated = generateString(64);
+  });
+
+  describe('getAll', () => {
+    it('should be called', async () => {
+
+      await usersController.getAll();
+      expect(getAllUserMock).toHaveBeenCalledTimes(1);
     });
 
+    it('should return users array', async () => {
+      getAllUserMock.mockResolvedValue(getAllUsersExpextedResult);
+      expect(await usersController.getAll()).toEqual(getAllUsersExpextedResult);
+    });
 
-    describe('update', () => {
-      it('should be called with passed data once - success', async () => {
-        await usersController.update(userId, updateUserDataDto);
-        expect(updateUserMock).toHaveBeenCalledTimes(1);
-        expect(updateUserMock).toHaveBeenCalledWith(userId, updateUserDataDto);
-      });
-  
-      it('should return updated user object - success', async () => {
-        updateUserMock.mockResolvedValue(updatedUserExpectedResult);
-
-        expect(await usersController.update(userId, updateUserDataDto)).toEqual(
-          updatedUserExpectedResult,
-        );
-      });
-
-      it('should throw an error with status 500 and validation message - fail', async () => {
-        updateUserMock.mockRejectedValue(new HttpException("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
-  
-        try {
-          await usersController.update(userId, updateUserDataDto);
-        } catch (e) {
-          expect(e.message).toBe('INTERNAL_SERVER_ERROR');
-          expect(e.status).toBe(500);
-        }
-      });
-
-      it('should throw an error with status 404 and validation message - fail', async () => {
-        updateUserMock.mockRejectedValue(new NotFoundException("No such user!"));
-  
-        try {
-          await usersController.update(userId, updateUserDataDto);
-        } catch (e) {
-          expect(e.message).toBe('No such user!');
-          expect(e.status).toBe(404);
-        }
-      });
-  
-      it('should throw an error with status 400 and some validation message - fail', async () => {
-        updateUserMock.mockRejectedValue(new ValidationException(validationMessageHttpExceptionExample));
-      
-        try {
-          await usersController.update(userId, updateUserDataDto);
-        } catch (e) {
-          expect(e.message).toBe(validationMessageHttpExceptionExample);
-          expect(e.status).toBe(400);
-        }
-      });
-      
+    it('should throw an error with status 500 and error message - fail', async () => {
+      getAllUserMock.mockResolvedValue(new HttpException("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
+      try {
+        await usersController.getAll();
+      } catch (e) {
+        expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+        expect(e.status).toBe(500);
+      }
     });
   });
+
+  describe('create', () => {
+    it('should be called with passed data once', async () => {
+      await usersController.create(createUserDataDto);
+      expect(createUserMock).toHaveBeenCalledTimes(1);
+      expect(createUserMock).toHaveBeenCalledWith(createUserDataDto);
+    });
+
+    it('should return created user object', async () => {
+      createUserMock.mockResolvedValue(createdUserExpectedResult);
+      expect(await usersController.create(createUserDataDto)).toEqual(
+        createdUserExpectedResult,
+      );
+    });
+
+    it('should throw an error with status 500 and error message - fail', async () => {
+      createUserMock.mockResolvedValue(new HttpException("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
+
+      try {
+        await usersController.create(createUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+        expect(e.status).toBe(500);
+      }
+    });
+  });
+
+
+  describe('update', () => {
+    it('should be called with passed data once - success', async () => {
+      await usersController.update(userId, updateUserDataDto);
+      expect(updateUserMock).toHaveBeenCalledTimes(1);
+      expect(updateUserMock).toHaveBeenCalledWith(userId, updateUserDataDto);
+    });
+
+    it('should return updated user object - success', async () => {
+      updateUserMock.mockResolvedValue(updatedUserExpectedResult);
+
+      expect(await usersController.update(userId, updateUserDataDto)).toEqual(
+        updatedUserExpectedResult,
+      );
+    });
+
+    it('should throw an error with status 500 and error message - fail', async () => {
+      updateUserMock.mockRejectedValue(new HttpException("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
+
+      try {
+        await usersController.update(userId, updateUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+        expect(e.status).toBe(500);
+      }
+    });
+
+    it('should throw an error with status 404 and error message - fail', async () => {
+      updateUserMock.mockRejectedValue(new NotFoundException("No such user!"));
+
+      try {
+        await usersController.update(userId, updateUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe('No such user!');
+        expect(e.status).toBe(404);
+      }
+    });
+
+/*     it('should throw an error with status 400 and some validation message - fail', async () => {
+      updateUserMock.mockRejectedValue(new ValidationException(validationMessageHttpExceptionExample));
+    
+      try {
+        await usersController.update(userId, updateUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe(validationMessageHttpExceptionExample);
+        expect(e.status).toBe(400);
+      }
+    }); */
+  });
+});
   

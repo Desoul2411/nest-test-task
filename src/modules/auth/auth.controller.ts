@@ -39,7 +39,7 @@ export class AuthController {
   @UsePipes(ValidationPipe)
   @Post("/login")
   login(@Body() userDto: LoginUserDto) {
-    return this.authService.login(userDto);
+    return this.authService.loginUser(userDto);
   }
 
   @ApiOperation({ summary: "Register" })
@@ -62,6 +62,6 @@ export class AuthController {
   //@UseFilters(new HttpExceptionFilter())
   @Post("/registration")
   registration(@Body() userDto: CreateUserDto) {
-    return this.authService.registration(userDto);
+    return this.authService.registerUser(userDto);
   }
 }

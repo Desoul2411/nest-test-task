@@ -18,12 +18,12 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async login(userDto: LoginUserDto) {
+  async loginUser(userDto: LoginUserDto) {
     const user = await this.validateUser(userDto);
     return this.generateToken(user);
   }
 
-  async registration(userDto: CreateUserDto) {
+  async registerUser(userDto: CreateUserDto) {
     const candidate = await this.userService.getUserByEmail(userDto.email);
     if (candidate) {
       throw new HttpException(

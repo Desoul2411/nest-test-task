@@ -45,6 +45,7 @@ export class RolesGuard implements CanActivate {
     if (requiredRole.includes(user.role)) {
       return true;
     };
+
     throw new HttpException("Access forbidden!", HttpStatus.FORBIDDEN);
   }
 }
