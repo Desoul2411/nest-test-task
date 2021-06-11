@@ -20,7 +20,6 @@ describe('AuthController', () => {
 
   let passwordGeneratedUnhashed = generateString(12);
   let passwordGeneratedHashed = generateString(64);
-  let tokenGenerated = generateString(64);
   
   const loginUserDataDto = {
       email: "desoul2411@gmail.com",
