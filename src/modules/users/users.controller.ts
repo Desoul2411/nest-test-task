@@ -43,7 +43,7 @@ export class UsersController {
   })
   @UsePipes(ValidationPipe)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body() createUserDto: CreateUserDto): Promise<User> {
     return this.userService.createUser(createUserDto);
   }
 
@@ -91,10 +91,10 @@ export class UsersController {
   @UseGuards(RolesGuard)
   // @UseFilters(new HttpExceptionFilter())
   @Put(":id")
-  async update(
+  async update (
     @Param("id") id: string,
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto
-  ) {
+  ): Promise<User> {
     return this.userService.updateUser(id, updateUserDto);
   }
 }

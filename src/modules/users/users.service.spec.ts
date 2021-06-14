@@ -109,8 +109,8 @@ describe('UsersService', () => {
   describe('createUser', () => {
     it('should call the repository with correct paramaters and return created user object', async () => {
       const userRepositorySaveSpy = jest
-      .spyOn(userRepository, 'save')
-      .mockResolvedValue(createUserExpectedResult);
+        .spyOn(userRepository, 'save')
+        .mockResolvedValue(createUserExpectedResult);
 
       const res = await usersService.createUser(createUserDataDto);
 
@@ -123,8 +123,8 @@ describe('UsersService', () => {
 
     it('should throw INTERNAL_SERVER_ERROR with status 500', async () => {
       jest
-      .spyOn(userRepository, 'save')
-      .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
+        .spyOn(userRepository, 'save')
+        .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
 
       try {
           await usersService.createUser(createUserDataDto);
@@ -138,8 +138,8 @@ describe('UsersService', () => {
   describe('getAllUsers', () => {
     it('should call the repository and return array of users', async () => {
       const userRepositoryFindSpy = jest
-      .spyOn(userRepository, 'find')
-      .mockResolvedValue(getAllUsersExpextedResult);
+        .spyOn(userRepository, 'find')
+        .mockResolvedValue(getAllUsersExpextedResult);
 
       const res = await usersService.getAllUsers();
   
@@ -166,8 +166,8 @@ describe('UsersService', () => {
   describe('getUserByEmail', () => {
     it('should call the repository with correct paramaters and return user object', async () => {
       const userRepositoryFindOneSpy = jest
-      .spyOn(userRepository, 'findOne')
-      .mockResolvedValue(findOneExpectedResult);
+        .spyOn(userRepository, 'findOne')
+        .mockResolvedValue(findOneExpectedResult);
 
       const res = await usersService.getUserByEmail(userEmail);
   
@@ -192,8 +192,8 @@ describe('UsersService', () => {
   describe('getUserById', () => {
     it('should call the repository with correct paramaters and return user object', async () => {
       const userRepositoryFindOneSpy = jest
-      .spyOn(userRepository, 'findOne')
-      .mockResolvedValue(findOneExpectedResult);
+        .spyOn(userRepository, 'findOne')
+        .mockResolvedValue(findOneExpectedResult);
 
       const res = await usersService.getUserById(userId);
   
@@ -235,8 +235,8 @@ describe('UsersService', () => {
         .mockResolvedValue(findOneExpectedResult);
 
       const userRepositorySaveSpy = jest
-      .spyOn(userRepository, 'save')
-      .mockResolvedValue(updatedUserExpectedResult);
+        .spyOn(userRepository, 'save')
+        .mockResolvedValue(updatedUserExpectedResult);
 
       const res = await usersService.updateUser(userId, updateUserDataDto);
   

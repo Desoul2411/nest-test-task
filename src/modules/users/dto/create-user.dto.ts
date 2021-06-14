@@ -14,7 +14,6 @@ export class CreateUserDto {
   })
   @IsString({ message: "must be a string" })
   @IsNotEmpty({ message: "the field must not be empty!" })
-  @Length(5, 14, { message: "must be between 5 and 14 characters" })
   readonly password: string;
   /*     readonly role: string; */
 

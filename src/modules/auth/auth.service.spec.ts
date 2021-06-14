@@ -7,7 +7,7 @@ import { generateString } from '../../utils/generators.utils';
 import { Test } from '@nestjs/testing';
 import { JwtService } from "@nestjs/jwt";
 import { ValidationException } from "../../exceptions/validation.exception";
-import { Repository } from 'typeorm';
+import { Any, Repository } from 'typeorm';
 import * as bcrypt from "bcrypt";
 
 
@@ -15,16 +15,7 @@ describe('AuthService', () => {
     let usersService: UsersService;
     let authService: AuthService;
     let userRepository: Repository<User>;
-
-/*     jest.mock('bcrypt', () => ({
-        hash: jest.fn() 
-    }));
- */
-/*     jest.mock('../utils/functions-helpers/cipher.utils', () => ({
-        encrypt: jest.fn(),
-        decrypt: jest.fn(),
-        hashToSha256: jest.fn(),
-    })); */
+    let jwtService: JwtService;
     
     class UserRepositoryFake {
         public async save(): Promise<void> {}
@@ -33,12 +24,10 @@ describe('AuthService', () => {
     };  
 
     let passwordGenerated = generateString(12);
-    let passwordHashed = generateString(60);
-    const mockValue = {};
+    let passwordHashed = bcrypt.hash(passwordGenerated, 5);
     const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs";
-    const signMock = jest.fn(() => token);
     const userEmail = "Desoul40@mail.ru";
-    const userId = 'df229c80-7432-4951-9f21-a1c5f803a738';
+    const signMock = jest.fn(() => token);
 
     const loginUserDataDto = {
         email: "Desoul40@mail.ru",
@@ -47,11 +36,16 @@ describe('AuthService', () => {
 
     const userData = {
         email : "Desoul40@mail.ru",
-        password: passwordGenerated,
+        password: passwordHashed,
         role: "USER",
         name : "slava",
         birthdate: "20.11.1988",
         id: "df229c80-7432-4951-9f21-a1c5f803a738"
+    };
+
+    const userDataToToken = {
+        userId: "df229c80-7432-4951-9f21-a1c5f803a738",
+        role: "USER"
     };
 
     const registerUserDataDto = {
@@ -63,14 +57,14 @@ describe('AuthService', () => {
 
     const createUserExpectedResult = {
         email : "Desoul40@mail.ru",
-        password: passwordGenerated,
+        password: passwordHashed,
         role: "USER",
         name : "slava",
         birthdate: "20.11.1988",
         id: "df229c80-7432-4951-9f21-a1c5f803a738"
     };
 
-    const loginUserExpectedResult = { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs" };
+    const tokenResult = { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs" };
 
     beforeEach(async () => {
         const moduleRef = await Test.createTestingModule({
@@ -86,7 +80,7 @@ describe('AuthService', () => {
               useValue: {
                 sign: signMock
               }
-            }
+            },
           ],
         })
         .compile();
@@ -94,18 +88,19 @@ describe('AuthService', () => {
         authService = moduleRef.get<AuthService>(AuthService);
         usersService = moduleRef.get<UsersService>(UsersService);
         userRepository = moduleRef.get(getRepositoryToken(User));
+        jwtService = moduleRef.get<JwtService>(JwtService);
     });
 
 
     describe('loginUser', () => {
         it('should call the inetrnal functions with correct parameters and return token object', async () => {
             const validateUserSpy = jest
-            .spyOn(authService, 'validateUser')
-            .mockResolvedValue(userData);
+                .spyOn(authService, 'validateUser')
+                .mockResolvedValue(userData);
 
             const generateTokenSpy = jest
-            .spyOn(authService, 'generateToken')
-            .mockImplementation(() => loginUserExpectedResult);
+                .spyOn(authService, 'generateToken')
+                .mockResolvedValue(tokenResult);
 
             const res = await authService.loginUser(loginUserDataDto);
 
@@ -113,7 +108,7 @@ describe('AuthService', () => {
             expect(generateTokenSpy).toHaveBeenCalledTimes(1);
             expect(validateUserSpy).toHaveBeenCalledWith(loginUserDataDto);
             expect(generateTokenSpy).toHaveBeenCalledWith(userData);
-            expect(res).toEqual(loginUserExpectedResult);
+            expect(res).toEqual(tokenResult);
         });
         
         it('should throw an error with status 401 and validation message "Invalid email or password"', async () => {
@@ -123,12 +118,28 @@ describe('AuthService', () => {
 
             jest
                 .spyOn(authService, 'generateToken')
-                .mockImplementation(() => loginUserExpectedResult);
+                .mockResolvedValue(tokenResult);
             try {
                 await authService.loginUser(loginUserDataDto);
             } catch (e) {
                 expect(e.message).toBe('Invalid email or password');
                 expect(e.status).toBe(401);
+            }
+        });
+
+        it('should throw an error with status 404 and message "No such user!" if user with such email is not found"', async () => {
+            jest
+                .spyOn(authService, 'validateUser')
+                .mockRejectedValue(new NotFoundException({ message: "No such user!" }));
+
+            jest
+                .spyOn(authService, 'generateToken')
+                .mockResolvedValue(tokenResult);
+            try {
+                await authService.loginUser(loginUserDataDto);
+            } catch (e) {
+                expect(e.message).toBe('No such user!');
+                expect(e.status).toBe(404);
             }
         });
 
@@ -139,7 +150,7 @@ describe('AuthService', () => {
 
             jest
                 .spyOn(authService, 'generateToken')
-                .mockImplementation(() => loginUserExpectedResult);
+                .mockResolvedValue(tokenResult);
             try {
                 await authService.loginUser(loginUserDataDto);
             } catch (e) {
@@ -151,71 +162,148 @@ describe('AuthService', () => {
 
     describe('registerUser', () => {
         it('should call the internal functions with correct parameters and return registration success message ', async () => {
-
-
             const getUserByEmailSpy = jest
-            .spyOn(usersService, 'getUserByEmail')
-            .mockResolvedValue(undefined);
-            //mockValue(passwordHashed)
-        /*      (bcrypt.hash as jest.Mock).mockImplementation(
-                () => passwordHashed,
-            );
-        */
+                .spyOn(usersService, 'getUserByEmail')
+                .mockResolvedValue(undefined);
+
             const createUserSpy = jest
-            .spyOn(usersService, 'createUser')
-            .mockResolvedValue(createUserExpectedResult);
+                .spyOn(usersService, 'createUser')
+                .mockResolvedValue(createUserExpectedResult);
 
             const res = await authService.registerUser(registerUserDataDto);
 
             expect(getUserByEmailSpy).toHaveBeenCalledTimes(1);
             expect(createUserSpy).toHaveBeenCalledTimes(1);
             expect(getUserByEmailSpy).toHaveBeenCalledWith(userEmail);
-            expect(createUserSpy).toHaveBeenCalledWith({...registerUserDataDto, password: passwordHashed});
+            expect(createUserSpy).toHaveBeenCalledWith({...registerUserDataDto, password: expect.any(String)});
             expect(res).toEqual({ message: "Registered successfully!" });
         });
         
+        it('should throw an error with status 400 and message "User with this email already exists"', async () => {
+            jest
+                .spyOn(usersService, 'getUserByEmail')
+                .mockResolvedValue(userData);
 
+            jest
+                .spyOn(usersService, 'createUser')
+                .mockResolvedValue(createUserExpectedResult);
 
+            try {
+                await authService.registerUser(registerUserDataDto);
+            } catch (e) {
+                expect(e.message).toBe('User with this email already exists');
+                expect(e.status).toBe(400);
+            }
+        });
 
+        it('should throw INTERNAL_SERVER_ERROR with status 500', async () => {
+            jest
+                .spyOn(usersService, 'getUserByEmail')
+                .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
 
+            jest
+                .spyOn(usersService, 'createUser')
+                .mockResolvedValue(createUserExpectedResult);
+            try {
+                await authService.registerUser(registerUserDataDto);
+            } catch (e) {
+                expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+                expect(e.status).toBe(500);
+            }
+        });
+    });
 
+    describe('generateToken', () => {
+        it('should return token object ', async () => {
+            const JwtSignSpy = jest
+                .spyOn(jwtService, 'sign')
+                .mockResolvedValue(token as never);
 
+            const res = await authService.generateToken(userData);
 
+            expect(JwtSignSpy).toHaveBeenCalledTimes(1);
+            expect(JwtSignSpy).toHaveBeenCalledWith(userDataToToken);
+            expect(res).toEqual(tokenResult);
+        });
 
+       it('should throw INTERNAL_SERVER_ERROR with status 500', async () => {
+            jest
+                .spyOn(jwtService, 'sign')
+                .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR) as never);
+        
+            try {
+                await authService.generateToken(userData);
+            } catch (e) {
+                expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+                expect(e.status).toBe(500);
+            }
+        });
+    });
 
+    describe('validateUser', () => {
+        it('should return user data object ', async () => {
+            const getUsderByEmailSpy = jest
+                .spyOn(usersService, 'getUserByEmail')
+                .mockResolvedValue(userData);
+            const comparePasswordsSpy = jest
+                .spyOn(bcrypt, 'compare')
+                .mockResolvedValue(true);
+             
+            const res = await authService.validateUser(loginUserDataDto);
 
+            expect(getUsderByEmailSpy).toHaveBeenCalledTimes(1);
+            expect(getUsderByEmailSpy).toHaveBeenCalledWith(loginUserDataDto.email);
+            expect(comparePasswordsSpy).toHaveBeenCalledTimes(1);
+            expect(comparePasswordsSpy).toHaveBeenCalledWith(loginUserDataDto.password, userData.password);
+            expect(res).toEqual(userData);
+        });
 
-
-        /* it('should throw an error with status 401 and validation message "Invalid email or password"', async () => {
+        it('should throw an error with status 404 and message "No such user!" if user with such email is not found', async () => {
             jest
                 .spyOn(usersService, 'getUserByEmail')
                 .mockResolvedValue(undefined);
-
             jest
-                .spyOn(authService, 'generateToken')
-                .mockImplementation(() => loginUserExpectedResult);
+                .spyOn(bcrypt, 'compare')
+                .mockResolvedValue(true);
             try {
-                await authService.loginUser(loginUserDataDto);
+                await authService.validateUser(loginUserDataDto);
             } catch (e) {
-                expect(e.message).toBe('Invalid email or password');
+                expect(e.message).toBe('No such user!');
+                expect(e.status).toBe(404);
+            }
+        });
+
+        it('should throw an error with status 401 and message "Invalid password!" if password is invalid', async () => {
+            jest
+                .spyOn(usersService, 'getUserByEmail')
+                .mockResolvedValue(userData);
+            jest
+                .spyOn(bcrypt, 'compare')
+                .mockResolvedValue(false);
+            try {
+                await authService.validateUser(loginUserDataDto);
+            } catch (e) {
+                expect(e.message).toBe('Invalid password!');
                 expect(e.status).toBe(401);
             }
         });
 
         it('should throw INTERNAL_SERVER_ERROR with status 500', async () => {
             jest
-                .spyOn(authService, 'validateUser')
+                .spyOn(usersService, 'getUserByEmail')
                 .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
-
             jest
-                .spyOn(authService, 'generateToken')
-                .mockImplementation(() => loginUserExpectedResult);
+                .spyOn(bcrypt, 'compare')
+                .mockResolvedValue(true);
             try {
-                await authService.loginUser(loginUserDataDto);
+                await authService.validateUser(loginUserDataDto);
             } catch (e) {
                 expect(e.message).toBe('INTERNAL_SERVER_ERROR');
                 expect(e.status).toBe(500);
             }
-        }); */
+        });
     });
+
+
+
 });

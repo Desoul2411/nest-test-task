@@ -11,7 +11,7 @@ export class UsersService {
     @InjectRepository(User) private userRepository: Repository<User>
   ) {}
 
-  async createUser(dto: CreateUserDto) {
+  async createUser(dto: CreateUserDto): Promise<User> {
     const { email, password, name, birthdate } = dto;
     const user = new User();
     user.email = email;
@@ -23,17 +23,18 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async getAllUsers() {
+  async getAllUsers(): Promise<User[]> {
     const users = await this.userRepository.find();
     return users;
   }
 
-  async getUserByEmail(email: string) {
+  async getUserByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findOne({ email });
+    
     return user;
   }
 
-  async getUserById(id: string) {
+  async getUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ id });
 
     if (!user) {
@@ -43,7 +44,7 @@ export class UsersService {
     return user;
   }
 
-  async updateUser(id: string, dto: UpdateUserDto) {
+  async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
     const { name, birthdate } = dto;
     const user = await this.getUserById(id);
     user.name = name;

@@ -2,6 +2,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { CreateUserDto } from "../users/dto/create-user.dto";
@@ -10,6 +11,7 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { User } from "../users/entities/user.entity";
 import { LoginUserDto } from "../users/dto/login-user-dto";
+import { TokenResponse, ReigestrationSuccessResponse } from "src/types/auth.type";
 
 @Injectable()
 export class AuthService {
@@ -18,20 +20,21 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async loginUser(userDto: LoginUserDto) {
+  async loginUser(userDto: LoginUserDto): Promise<TokenResponse> {
     const user = await this.validateUser(userDto);
+
     if (user)
     return this.generateToken(user);
   }
 
-  async registerUser(userDto: CreateUserDto) {
+  async registerUser(userDto: CreateUserDto): Promise<ReigestrationSuccessResponse> {
     const candidate = await this.userService.getUserByEmail(userDto.email);
     if (candidate) {
       throw new HttpException(
         "User with this email already exists",
         HttpStatus.BAD_REQUEST
       );
-    }
+    };
 
     const passwordHashed = await bcrypt.hash(userDto.password, 5);
     await this.userService.createUser({ ...userDto, password: passwordHashed });
@@ -39,15 +42,21 @@ export class AuthService {
     return { message: "Registered successfully!" };
   }
 
-  generateToken(user: User) {
+   async generateToken(user: User): Promise<TokenResponse> {
     const payload = { userId: user.id, role: user.role };
+
     return {
-      token: this.jwtService.sign(payload),
+      token: await this.jwtService.sign(payload),
     };
   }
 
-  async validateUser(userDto: LoginUserDto): Promise<User | void> {
+  async validateUser(userDto: LoginUserDto): Promise<User> {
     const user = await this.userService.getUserByEmail(userDto.email);
+
+    if(!user) {
+      throw new NotFoundException({ message: "No such user!" });
+    }
+
     const isPasswordsMatch = await bcrypt.compare(
       userDto.password,
       user.password
@@ -57,6 +66,6 @@ export class AuthService {
       return user;
     };
 
-    throw new UnauthorizedException({ message: "Invalid email or password" });
+    throw new UnauthorizedException({ message: "Invalid password!" });
   }
 }

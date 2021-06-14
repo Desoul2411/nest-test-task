@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ValidationPipe } from "../../pipes/validation.pipe";
 import {
   ReigestrationSuccessResponse,
-  LoginSuccessResponse,
+  TokenResponse,
 } from "../../types/auth.type";
 import { CreateUserDto } from "../users/dto/create-user.dto";
 import { LoginUserDto } from "../users/dto/login-user-dto";
@@ -12,6 +12,7 @@ import {
   ErrorEmailExists400,
   ErrorResponse500,
   ErrorValidation400,
+  ErrorResponse404,
 } from "../../types/error.type";
 import { AuthService } from "./auth.service";
 
@@ -24,12 +25,17 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: "Logged in",
-    type: LoginSuccessResponse,
+    type: TokenResponse,
   })
   @ApiResponse({
     status: 401,
-    description: "Invalid email and password",
+    description: "Invalid password!",
     type: ErrorResponse401,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "No such user!",
+    type: ErrorResponse404,
   })
   @ApiResponse({
     status: 400,
@@ -38,7 +44,7 @@ export class AuthController {
   })
   @UsePipes(ValidationPipe)
   @Post("/login")
-  login(@Body() userDto: LoginUserDto) {
+  login(@Body() userDto: LoginUserDto): Promise<TokenResponse> {
     return this.authService.loginUser(userDto);
   }
 
@@ -61,7 +67,7 @@ export class AuthController {
   @UsePipes(ValidationPipe)
   //@UseFilters(new HttpExceptionFilter())
   @Post("/registration")
-  registration(@Body() userDto: CreateUserDto) {
+  registration(@Body() userDto: CreateUserDto): Promise<ReigestrationSuccessResponse> {
     return this.authService.registerUser(userDto);
   }
 }
