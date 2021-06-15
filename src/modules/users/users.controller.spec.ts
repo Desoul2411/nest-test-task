@@ -1,5 +1,5 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CanActivate, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -16,6 +16,7 @@ describe('UsersController', () => {
     const createUserMock = jest.fn();
     const getAllUserMock = jest.fn();
     const updateUserMock = jest.fn();
+    const deleteUserByIdMock = jest.fn();
   
     let passwordGenerated = generateString(64);
     
@@ -64,9 +65,16 @@ describe('UsersController', () => {
         name : "Jack",
         birthdate: "14.11.1990"
       }
-  ]
+  ];
 
-  const validationMessageHttpExceptionExample = "password - must be between 5 and 14 characters, Must be a string";
+  const deleteUserExpectedResult = {
+    email : "Desoul40@mail.ru",
+    password: passwordGenerated,
+    role: "USER",
+    name : "slava",
+    birthdate: "20.11.1988",
+  }
+
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -83,6 +91,7 @@ describe('UsersController', () => {
             createUser: createUserMock,
             getAllUsers: getAllUserMock,
             updateUser: updateUserMock,
+            deleteUserById: deleteUserByIdMock
           },
         },
         {
@@ -144,6 +153,16 @@ describe('UsersController', () => {
         expect(e.status).toBe(500);
       }
     });
+
+    it('should throw an error with status 400 and message "User with this email already exists" - fail', async () => {
+      createUserMock.mockResolvedValue(new HttpException("User with this email already exists", HttpStatus.BAD_REQUEST));
+      try {
+        await usersController.create(createUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe("User with this email already exists");
+        expect(e.status).toBe(400);
+      }
+    });
   });
 
 
@@ -183,17 +202,40 @@ describe('UsersController', () => {
         expect(e.status).toBe(404);
       }
     });
+  });
 
-/*     it('should throw an error with status 400 and some validation message - fail', async () => {
-      updateUserMock.mockRejectedValue(new ValidationException(validationMessageHttpExceptionExample));
-    
+  describe('delete', () => {
+    it('should be called with passed params and return confirmation message - success', async () => {
+      deleteUserByIdMock.mockResolvedValue(deleteUserExpectedResult);
+      const res = await usersController.delete(userId);
+      expect(deleteUserByIdMock).toHaveBeenCalledTimes(1);
+      expect(deleteUserByIdMock).toHaveBeenCalledWith(userId);
+      expect(res).toEqual(deleteUserExpectedResult);
+    });
+
+    it('should throw an error with status 404 and error message - fail', async () => {
+      deleteUserByIdMock.mockRejectedValue(new NotFoundException("No such user!"));
+
       try {
-        await usersController.update(userId, updateUserDataDto);
+        await usersController.delete(userId);
       } catch (e) {
-        expect(e.message).toBe(validationMessageHttpExceptionExample);
-        expect(e.status).toBe(400);
+        expect(e.message).toBe('No such user!');
+        expect(e.status).toBe(404);
       }
-    }); */
+    });
+
+    it('should throw an error with status 500 and error message - fail', async () => {
+      deleteUserByIdMock.mockRejectedValue(new HttpException("INTERNAL_SERVER_ERROR", HttpStatus.INTERNAL_SERVER_ERROR));
+
+      try {
+        await usersController.delete(userId);
+      } catch (e) {
+        expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+        expect(e.status).toBe(500);
+      }
+    });
+
+    
   });
 });
   

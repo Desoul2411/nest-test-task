@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
   Put,
+  UseFilters,
   UseGuards,
   UsePipes,
 } from "@nestjs/common";
@@ -17,12 +19,15 @@ import { UsersService } from "./users.service";
 import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { User } from "./entities/user.entity";
 import {
+  ErrorEmailExists400,
   ErrorNotAthorized401,
   ErrorResponse403,
   ErrorResponse404,
   ErrorResponse500,
   ErrorValidation400,
 } from "../../types/error.type";
+import { HttpExceptionFilter } from "../../filters/http-exeption.filter";
+import { UserDeleted } from "../../types/user.type";
 
 @ApiTags("Users")
 @Controller("users")
@@ -38,8 +43,8 @@ export class UsersController {
   })
   @ApiResponse({
     status: 400,
-    description: "Validation error",
-    type: ErrorValidation400,
+    description: "Bad request",
+    type: ErrorEmailExists400,
   })
   @UsePipes(ValidationPipe)
   @Post()
@@ -56,7 +61,7 @@ export class UsersController {
     type: ErrorResponse500,
   })
   @Get()
-  getAll() {
+  getAll(): Promise<User[]> {
     return this.userService.getAllUsers();
   }
 
@@ -97,4 +102,21 @@ export class UsersController {
   ): Promise<User> {
     return this.userService.updateUser(id, updateUserDto);
   }
+
+  @ApiOperation({ summary: "Delete user" })
+  @ApiResponse({ status: 200, description: "User deleted", type: UserDeleted })
+  @ApiResponse({
+    status: 404,
+    description: "User is not found",
+    type: ErrorResponse404,
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Internal server error",
+    type: ErrorResponse500,
+  })
+  @Delete(":id")
+	async delete(@Param("id") id: string)  {
+		return this.userService.deleteUserById(id);
+	}
 }

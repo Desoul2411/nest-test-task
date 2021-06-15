@@ -1,12 +1,10 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { CanActivate, HttpException, HttpStatus, NotFoundException, Param } from '@nestjs/common';
-import { UsersController } from './users.controller';
+import { HttpException, HttpStatus, NotFoundException, Param } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { generateString } from '../../utils/generators.utils';
 import { Test } from '@nestjs/testing';
 import { JwtService } from "@nestjs/jwt";
-import { ValidationException } from "../../exceptions/validation.exception";
 import { Repository } from 'typeorm';
 
 
@@ -25,6 +23,7 @@ describe('UsersService', () => {
     public async save(): Promise<void> {}
     public async find(): Promise<void> {}
     public async findOne(): Promise<void> {}
+    public async remove(): Promise<void> {}
   };  
   
   const createUserDataDto = {
@@ -85,6 +84,13 @@ describe('UsersService', () => {
     }
   ];
 
+  const removeExpectedResultSuccess = {
+    email : "Desoul40@mail.ru",
+    password: passwordGenerated,
+    role: "USER",
+    name : "slava",
+    birthdate: "20.11.1988",
+  }
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -107,7 +113,7 @@ describe('UsersService', () => {
   });
 
   describe('createUser', () => {
-    it('should call the repository with correct paramaters and return created user object', async () => {
+    it('should call the repository with correct paramaters and return created user object - success', async () => {
       const userRepositorySaveSpy = jest
         .spyOn(userRepository, 'save')
         .mockResolvedValue(createUserExpectedResult);
@@ -121,7 +127,20 @@ describe('UsersService', () => {
       expect(res).toEqual(createUserExpectedResult);
     });
 
-    it('should throw INTERNAL_SERVER_ERROR with status 500', async () => {
+    it('should throw an error with status 400 and message "User with this email already exists" - fail', async () => {
+      jest
+        .spyOn(userRepository, 'save')
+        .mockRejectedValue(new HttpException('User with this email already exists', HttpStatus.BAD_REQUEST));
+
+      try {
+          await usersService.createUser(createUserDataDto);
+      } catch (e) {
+          expect(e.message).toBe('User with this email already exists');
+          expect(e.status).toBe(400);
+      }
+    });
+
+    it('should throw INTERNAL_SERVER_ERROR with status 500 - fail', async () => {
       jest
         .spyOn(userRepository, 'save')
         .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
@@ -269,6 +288,61 @@ describe('UsersService', () => {
 
       jest
         .spyOn(userRepository, 'save')
+        .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
+
+      try {
+        await usersService.updateUser(userId, updateUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe('INTERNAL_SERVER_ERROR');
+        expect(e.status).toBe(500);
+      }
+    });
+  });
+
+  describe('deleteUserById', () => {
+    it('should call the repository with correct paramaters and return updated user object', async () => {
+      const getUserByIdSpy = jest
+        .spyOn(usersService, 'getUserById')
+        .mockResolvedValue(findOneExpectedResult);
+
+
+      const userRepositoryRemoveSpy = jest
+        .spyOn(userRepository, 'remove')
+        .mockResolvedValue(removeExpectedResultSuccess as User);
+
+      const res = await usersService.deleteUserById(userId);
+  
+      expect(getUserByIdSpy).toHaveBeenCalledTimes(1);
+      expect(getUserByIdSpy).toHaveBeenCalledTimes(1);
+      expect(userRepositoryRemoveSpy).toHaveBeenCalledWith(findOneExpectedResult);
+      expect(res).toEqual(removeExpectedResultSuccess);
+    });
+
+    it('should throw an error with status 404 and message "No such user!"', async () => {
+      jest
+        .spyOn(usersService, 'getUserById')
+        .mockRejectedValue(new NotFoundException("No such user!"));
+
+
+      jest
+        .spyOn(userRepository, 'remove')
+        .mockResolvedValue(removeExpectedResultSuccess as User);
+
+      try {
+        await usersService.updateUser(userId, updateUserDataDto);
+      } catch (e) {
+        expect(e.message).toBe("No such user!");
+        expect(e.status).toBe(404);
+      }
+    });
+
+    it('should throw INTERNAL_SERVER_ERROR with status 500', async () => {
+      jest
+        .spyOn(usersService, 'getUserById')
+        .mockResolvedValue(findOneExpectedResult);
+
+      jest
+        .spyOn(userRepository, 'remove')
         .mockRejectedValue(new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR));
 
       try {
