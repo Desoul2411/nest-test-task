@@ -1,34 +1,50 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { CreateUserDto } from '../src/modules/users/dto/create-user.dto';
 import { UpdateUserDto } from '../src/modules/users/dto/update-user.dto';
-import { Connection } from 'typeorm';
+import { Connection, getConnection } from 'typeorm';
 import { generateString } from '../src/utils/generators.utils';
 import * as bcrypt from "bcrypt";
-import { response } from 'express';
 import { User } from '../src/modules/users/entities/user.entity';
+import { LoginUserDto } from '../src/modules/users/dto/login-user-dto';
+import { QueryRunner } from "typeorm";
+import { UserDeleted } from '../src/types/user.type';
 
 describe('UsersController (e2e)', () => {
     let app: INestApplication;
-    let userId: string;
-    let passwordGenerated = generateString(12);
-    let userPasswordHashed;
+    let queryRunner: QueryRunner;
+    let connection: Connection;
 
+    let userId: string;
+    let unexistingUserId: string;
+    let passwordGenerated: string;
+    let userPasswordHashed: string;
     let adminUserResponseData: User;
     let createUserDto: CreateUserDto;
-    let createSecondUserDto: CreateUserDto;
+    let deletedUserResponseData: UserDeleted;
     let createdUserExpectedResult: User;
-    let getAllUsers: User[];
-
+    let updatedUserExpectedResult: User;
+    let loginAdminDto: LoginUserDto;
+    let loginUserDto: LoginUserDto;
+    let token: string;
 
     const invalidTypeCreateUserDto = {
         email: "Desoul40mail.ru",
         password: 123456,
         name: "John",
         birthdate: "20.11.88"
+    };
+
+    const updateUserDto: UpdateUserDto = {
+        name: "Slava",
+        birthdate: "20.11.90"
+    };
+
+    const invalidUpdateUserDto = {
+        name : 3773,
+        birthdate: ""
     }
     
 
@@ -41,9 +57,18 @@ describe('UsersController (e2e)', () => {
         app.get(Connection);
         await app.init();
 
-    
-        const userPasswordHashed  = await bcrypt.hash(passwordGenerated,5);
+        connection = getConnection();
+        queryRunner = connection.createQueryRunner();
+        await queryRunner.connect();
 
+        unexistingUserId = 'df229c80-7432-4951-9f21-a1c5f803a333';
+        passwordGenerated = generateString(12);
+        userPasswordHashed  = await bcrypt.hash(passwordGenerated,5);
+
+        loginAdminDto = {
+            email: "Desoul25@mail.ru",
+            password: passwordGenerated
+        };
 
         createUserDto = {
             email: "Desoul40@mail.ru",
@@ -52,11 +77,17 @@ describe('UsersController (e2e)', () => {
             birthdate: "20.11.88"
         };
 
-        createSecondUserDto = {
-            email: "Desoul41@mail.ru",
+        loginUserDto = {
+            email: "Desoul40@mail.ru",
+            password: passwordGenerated
+        }
+
+        deletedUserResponseData = {
+            email: "Desoul40@mail.ru",
             password: userPasswordHashed,
-            name: "Jack",
-            birthdate: "20.11.98"
+            role: "USER",
+            name: "John",
+            birthdate: "20.11.88"
         };
 
         createdUserExpectedResult = {
@@ -68,6 +99,15 @@ describe('UsersController (e2e)', () => {
             birthdate: "20.11.88"
         };
 
+        updatedUserExpectedResult = {
+            id: "df229c80-7432-4951-9f21-a1c5f803a738",
+            email : "Desoul40@mail.ru",
+            password: userPasswordHashed,
+            role: "USER",
+            name: "Slava",
+            birthdate: "20.11.90"
+        };
+
         adminUserResponseData = {
             id: '7e5b1333-cdec-11eb-8230-0242ac150002',
             email: 'Desoul24@mail.ru',
@@ -76,10 +116,11 @@ describe('UsersController (e2e)', () => {
             name: 'slava',
             birthdate: '20.11.1988'
         };
+
         done();
     });
 
-    it('/users (POST) - create - success', async (done) => {
+    it('/users (POST) - create - success (should return created user)', async (done) => {
         await request(app.getHttpServer())
             .post('/users')
             .send(createUserDto)
@@ -96,6 +137,7 @@ describe('UsersController (e2e)', () => {
         await request(app.getHttpServer())
             .delete(`/users/${userId}`)
             .expect(200);
+
         done();
     });
 
@@ -119,6 +161,7 @@ describe('UsersController (e2e)', () => {
         await request(app.getHttpServer())
             .delete(`/users/${userId}`)
             .expect(200);
+
         done();
     });
 
@@ -130,6 +173,7 @@ describe('UsersController (e2e)', () => {
                 "email - invalid email",
                 "password - must be a string"
             ]);
+
         done();
     });
     
@@ -139,18 +183,208 @@ describe('UsersController (e2e)', () => {
             .expect('Content-Type', /json/)
             .expect(200)
             .then(({ body }: request.Response) => {
+                userId = body.id;
                 expect(body[0].email).toEqual(adminUserResponseData.email);
                 expect(body[0].name).toEqual(adminUserResponseData.name);
                 expect(body[0].password).toEqual(expect.any(String));
                 expect(body[0].birthdate).toEqual(adminUserResponseData.birthdate);
                 expect(body[0].id).toEqual(expect.any(String));
             });
+
         done();
     });
 
+    it('/users (UPDATE) - update - success (should return updated user)', async (done) => {
+        await request(app.getHttpServer())
+            .post('/users')
+            .send(createUserDto)
+            .expect(201)
+            .then(({ body }: request.Response) => {
+                userId = body.id;
+            });
 
+        await queryRunner.query(
+            "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" + userPasswordHashed + "','ADMIN', 'slava', '20.11.1988')"
+        );
 
+        const { body } = await request(app.getHttpServer())
+            .post('/auth/login')
+            .send(loginAdminDto);
+            
+        token = body.token;
 
+        await request(app.getHttpServer())
+            .put(`/users/${userId}`)
+            .set('Authorization', 'Bearer ' + token)
+            .send(updateUserDto)
+            .expect(200)
+            .then(({ body }: request.Response) => {
+                expect(body.email).toEqual(updatedUserExpectedResult.email);
+                expect(body.name).toEqual(updatedUserExpectedResult.name);
+                expect(body.password).toEqual(createdUserExpectedResult.password);
+                expect(body.birthdate).toEqual(updatedUserExpectedResult.birthdate);
+                expect(body.id).toEqual(expect.any(String));
+            });
+
+        await request(app.getHttpServer())
+            .delete(`/users/${userId}`)
+            .expect(200);
+
+        await queryRunner.query(
+            "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
+        ); 
+
+        done();
+    });
+
+    it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!")', async (done) => {
+        await request(app.getHttpServer())
+            .put(`/users/${userId}`)
+            .send(updateUserDto)
+            .expect(401, {
+                "statusCode": 401,
+                "message": "User is not authorized!"
+            });
+
+        done();
+    });
+
+    it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when role is USER)', async (done) => {
+        await request(app.getHttpServer())
+            .post('/users')
+            .send(createUserDto)
+            .expect(201)
+            .then(({ body }: request.Response) => {
+                userId = body.id;
+            });
+
+        const { body } = await request(app.getHttpServer())
+            .post('/auth/login')
+            .send(loginUserDto);
+            
+        token = body.token;
+
+        await request(app.getHttpServer())
+            .put(`/users/${userId}`)
+            .set('Authorization', 'Bearer ' + token)
+            .send(updateUserDto)
+            .expect(403, {
+                "statusCode": 403,
+                "message": "Access forbidden!"
+            })
+           
+
+        await request(app.getHttpServer())
+            .delete(`/users/${userId}`)
+            .expect(200);
+
+        done();
+    });
+    
+    it('/users (UPDATE) - update - fail (response status 404 with message "No such user!")', async (done) => {
+        await queryRunner.query(
+            "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" + userPasswordHashed + "','ADMIN', 'slava', '20.11.1988')"
+        );
+
+        const { body } = await request(app.getHttpServer())
+            .post('/auth/login')
+            .send(loginAdminDto);
+            
+        token = body.token;
+
+        await request(app.getHttpServer())
+            .put(`/users/${unexistingUserId}`)
+            .set('Authorization', 'Bearer ' + token)
+            .send(updateUserDto)
+            .expect(404, {
+                "statusCode": 404,
+                "message": "No such user!"
+            });
+
+        await queryRunner.query(
+            "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
+        ); 
+
+        done();
+    });
+
+    it('/users (UPDATE) - update - fail (response status 400 with some validation message)', async (done) => {
+        await request(app.getHttpServer())
+            .post('/users')
+            .send(createUserDto)
+            .expect(201)
+            .then(({ body }: request.Response) => {
+                userId = body.id;
+            });
+
+        await queryRunner.query(
+            "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" + userPasswordHashed + "','ADMIN', 'slava', '20.11.1988')"
+        );
+
+        const { body } = await request(app.getHttpServer())
+            .post('/auth/login')
+            .send(loginAdminDto);
+            
+        token = body.token;
+
+        await request(app.getHttpServer())
+            .put(`/users/${userId}`)
+            .set('Authorization', 'Bearer ' + token)
+            .send(invalidUpdateUserDto)
+            .expect(400, [
+                "name - must be a string",
+                "birthdate - The field must not be empty!"
+            ]);
+
+        await request(app.getHttpServer())
+            .delete(`/users/${userId}`)
+            .expect(200);
+
+        await queryRunner.query(
+            "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
+        ); 
+
+        done();
+    });
+
+    it('/users (DELETE) - delete - success (should return deleted user object with status 200")', async (done) => {
+        await request(app.getHttpServer())
+            .post('/users')
+            .send(createUserDto)
+            .expect(201)
+            .then(({ body }: request.Response) => {
+                userId = body.id;
+            });
+
+        await request(app.getHttpServer())
+            .delete(`/users/${userId}`)
+            .expect(200, deletedUserResponseData);
+
+        done();
+    });
+
+    it('/users (DELETE) - delete - fail (should return 404 with message "No such user!")', async (done) => {
+        await request(app.getHttpServer())
+            .post('/users')
+            .send(createUserDto)
+            .expect(201)
+            .then(({ body }: request.Response) => {
+                userId = body.id;
+            });
+
+        await request(app.getHttpServer())
+        .delete(`/users/${unexistingUserId}`)
+        .expect(404, {
+            "statusCode": 404,
+            "message": "No such user!"
+        });
+
+        await request(app.getHttpServer())
+            .delete(`/users/${userId}`)
+            .expect(200, deletedUserResponseData);
+
+        done();
+    });
 
     afterAll(async (done) => {
         await app.close();

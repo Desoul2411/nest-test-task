@@ -54,7 +54,7 @@ export class AuthService {
     const user = await this.userService.getUserByEmail(userDto.email);
 
     if(!user) {
-      throw new NotFoundException({ message: "No such user!" });
+      throw new NotFoundException({ statusCode:  HttpStatus.NOT_FOUND, message: "No such user!"});
     }
 
     const isPasswordsMatch = await bcrypt.compare(

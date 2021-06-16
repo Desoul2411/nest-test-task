@@ -45,7 +45,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({ id });
 
     if (!user) {
-      throw new NotFoundException("No such user!");
+      throw new NotFoundException({ statusCode:  HttpStatus.NOT_FOUND, message: "No such user!"});
     }
 
     return user;

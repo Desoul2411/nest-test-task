@@ -8,11 +8,11 @@ import {
 import { CreateUserDto } from "../users/dto/create-user.dto";
 import { LoginUserDto } from "../users/dto/login-user-dto";
 import {
-  ErrorResponse401,
   ErrorEmailExists400,
   ErrorResponse500,
   ErrorValidation400,
   ErrorResponse404,
+  ErrorNotAthorized401,
 } from "../../types/error.type";
 import { AuthService } from "./auth.service";
 
@@ -30,7 +30,7 @@ export class AuthController {
   @ApiResponse({
     status: 401,
     description: "Invalid password!",
-    type: ErrorResponse401,
+    type: ErrorNotAthorized401,
   })
   @ApiResponse({
     status: 404,

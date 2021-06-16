@@ -20,11 +20,10 @@ import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { User } from "./entities/user.entity";
 import {
   ErrorEmailExists400,
-  ErrorNotAthorized401,
+  ErrorUserIsNotAithorized401,
   ErrorResponse403,
   ErrorResponse404,
   ErrorResponse500,
-  ErrorValidation400,
 } from "../../types/error.type";
 import { HttpExceptionFilter } from "../../filters/http-exeption.filter";
 import { UserDeleted } from "../../types/user.type";
@@ -79,18 +78,13 @@ export class UsersController {
   })
   @ApiResponse({
     status: 401,
-    description: "User is not authorized",
-    type: ErrorNotAthorized401,
+    description: "User is not authorized!",
+    type: ErrorUserIsNotAithorized401,
   })
   @ApiResponse({
     status: 403,
     description: "Access forbidden",
     type: ErrorResponse403,
-  })
-  @ApiResponse({
-    status: 400,
-    description: "Validation error",
-    type: ErrorValidation400,
   })
   @Roles("ADMIN")
   @UseGuards(RolesGuard)

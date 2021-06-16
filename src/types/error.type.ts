@@ -50,7 +50,18 @@ export class ErrorNotAthorized401 {
   })
   statusCode: number;
   @ApiProperty({
-    default: "Invalid email or password",
+    default: "Invalid password!",
+  })
+  message: string;
+}
+
+export class ErrorUserIsNotAithorized401 {
+  @ApiProperty({
+    default: 401,
+  })
+  statusCode: number;
+  @ApiProperty({
+    default: "User is not authorized!",
   })
   message: string;
 }
