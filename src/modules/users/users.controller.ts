@@ -6,7 +6,6 @@ import {
   Param,
   Post,
   Put,
-  UseFilters,
   UseGuards,
   UsePipes,
 } from "@nestjs/common";
@@ -25,7 +24,6 @@ import {
   ErrorResponse404,
   ErrorResponse500,
 } from "../../types/error.type";
-import { HttpExceptionFilter } from "../../filters/http-exeption.filter";
 import { UserDeleted } from "../../types/user.type";
 
 @ApiTags("Users")
@@ -90,7 +88,7 @@ export class UsersController {
   @UseGuards(RolesGuard)
   // @UseFilters(new HttpExceptionFilter())
   @Put(":id")
-  async update (
+  async update(
     @Param("id") id: string,
     @Body(new ValidationPipe()) updateUserDto: UpdateUserDto
   ): Promise<User> {
@@ -110,7 +108,7 @@ export class UsersController {
     type: ErrorResponse500,
   })
   @Delete(":id")
-	async delete(@Param("id") id: string)  {
-		return this.userService.deleteUserById(id);
-	}
+  async delete(@Param("id") id: string): Promise<User> {
+    return this.userService.deleteUserById(id);
+  }
 }

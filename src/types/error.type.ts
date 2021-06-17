@@ -33,17 +33,6 @@ export class ErrorResponse404 {
   message: string;
 }
 
-export class ErrorResponse401 {
-  @ApiProperty({
-    default: 401,
-  })
-  statusCode: number;
-  @ApiProperty({
-    default: "Invalid email or password",
-  })
-  message: string;
-}
-
 export class ErrorNotAthorized401 {
   @ApiProperty({
     default: 401,

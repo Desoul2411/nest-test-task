@@ -8,6 +8,6 @@ export class addAdmin1622810880072 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query("DELETE FROM `users` WHERE role = ADMIN");
+    await queryRunner.query("DELETE FROM `users` WHERE `role` = 'ADMIN'");
   }
 }

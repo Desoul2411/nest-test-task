@@ -67,7 +67,9 @@ export class AuthController {
   @UsePipes(ValidationPipe)
   //@UseFilters(new HttpExceptionFilter())
   @Post("/registration")
-  registration(@Body() userDto: CreateUserDto): Promise<ReigestrationSuccessResponse> {
+  registration(
+    @Body() userDto: CreateUserDto
+  ): Promise<ReigestrationSuccessResponse> {
     return this.authService.registerUser(userDto);
   }
 }

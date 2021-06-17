@@ -1,393 +1,387 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { CreateUserDto } from '../src/modules/users/dto/create-user.dto';
-import { UpdateUserDto } from '../src/modules/users/dto/update-user.dto';
-import { Connection, getConnection } from 'typeorm';
-import { generateString } from '../src/utils/generators.utils';
+import { Test, TestingModule } from "@nestjs/testing";
+import { INestApplication } from "@nestjs/common";
+import * as request from "supertest";
+import { AppModule } from "../src/app.module";
+import { CreateUserDto } from "../src/modules/users/dto/create-user.dto";
+import { UpdateUserDto } from "../src/modules/users/dto/update-user.dto";
+import { Connection, getConnection } from "typeorm";
+import { generateString } from "../src/utils/generators.utils";
 import * as bcrypt from "bcrypt";
-import { User } from '../src/modules/users/entities/user.entity';
-import { LoginUserDto } from '../src/modules/users/dto/login-user-dto';
+import { User } from "../src/modules/users/entities/user.entity";
+import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
 import { QueryRunner } from "typeorm";
-import { UserDeleted } from '../src/types/user.type';
+import { UserDeleted } from "../src/types/user.type";
 
-describe('UsersController (e2e)', () => {
-    let app: INestApplication;
-    let queryRunner: QueryRunner;
-    let connection: Connection;
+describe("UsersController (e2e)", () => {
+  let app: INestApplication;
+  let queryRunner: QueryRunner;
+  let connection: Connection;
 
-    let userId: string;
-    let unexistingUserId: string;
-    let passwordGenerated: string;
-    let userPasswordHashed: string;
-    let adminUserResponseData: User;
-    let createUserDto: CreateUserDto;
-    let deletedUserResponseData: UserDeleted;
-    let createdUserExpectedResult: User;
-    let updatedUserExpectedResult: User;
-    let loginAdminDto: LoginUserDto;
-    let loginUserDto: LoginUserDto;
-    let token: string;
+  let userId: string;
+  let unexistingUserId: string;
+  let passwordGenerated: string;
+  let userPasswordHashed: string;
+  let createUserDto: CreateUserDto;
+  let invalidTypeCreateUserDto;
+  let deletedUserResponseData: UserDeleted;
+  let createdUserExpectedResult: User;
+  let updateUserDto: UpdateUserDto;
+  let invalidUpdateUserDto;
+  let updatedUserExpectedResult: User;
+  let loginAdminDto: LoginUserDto;
+  let loginUserDto: LoginUserDto;
+  let token: string;
 
-    const invalidTypeCreateUserDto = {
-        email: "Desoul40mail.ru",
-        password: 123456,
-        name: "John",
-        birthdate: "20.11.88"
+  beforeAll(async (done) => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = module.createNestApplication();
+    app.get(Connection);
+    await app.init();
+
+    connection = getConnection();
+    queryRunner = connection.createQueryRunner();
+    await queryRunner.connect();
+
+    unexistingUserId = "df229c80-7432-4951-9f21-a1c5f803a333";
+    passwordGenerated = generateString(12);
+    userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
+
+    loginAdminDto = {
+      email: "Desoul25@mail.ru",
+      password: passwordGenerated,
     };
 
-    const updateUserDto: UpdateUserDto = {
-        name: "Slava",
-        birthdate: "20.11.90"
+    createUserDto = {
+      email: "Desoul40@mail.ru",
+      password: userPasswordHashed,
+      name: "John",
+      birthdate: "20.11.88",
     };
 
-    const invalidUpdateUserDto = {
-        name : 3773,
-        birthdate: ""
-    }
-    
+    invalidTypeCreateUserDto = {
+      email: "Desoul40mail.ru",
+      password: 123456,
+      name: "John",
+      birthdate: "20.11.88",
+    };
 
-    beforeAll(async (done) => {
-        const module: TestingModule = await Test.createTestingModule({
-          imports: [AppModule],
-        }).compile();
+    loginUserDto = {
+      email: "Desoul40@mail.ru",
+      password: passwordGenerated,
+    };
 
-        app = module.createNestApplication();
-        app.get(Connection);
-        await app.init();
+    deletedUserResponseData = {
+      email: "Desoul40@mail.ru",
+      password: userPasswordHashed,
+      role: "USER",
+      name: "John",
+      birthdate: "20.11.88",
+    };
 
-        connection = getConnection();
-        queryRunner = connection.createQueryRunner();
-        await queryRunner.connect();
+    createdUserExpectedResult = {
+      id: "df229c80-7432-4951-9f21-a1c5f803a738",
+      email: "Desoul40@mail.ru",
+      password: userPasswordHashed,
+      role: "USER",
+      name: "John",
+      birthdate: "20.11.88",
+    };
 
-        unexistingUserId = 'df229c80-7432-4951-9f21-a1c5f803a333';
-        passwordGenerated = generateString(12);
-        userPasswordHashed  = await bcrypt.hash(passwordGenerated,5);
+    updateUserDto = {
+      name: "Slava",
+      birthdate: "20.11.90",
+    };
 
-        loginAdminDto = {
-            email: "Desoul25@mail.ru",
-            password: passwordGenerated
-        };
+    invalidUpdateUserDto = {
+      name: 3773,
+      birthdate: "",
+    };
 
-        createUserDto = {
-            email: "Desoul40@mail.ru",
-            password: userPasswordHashed,
-            name: "John",
-            birthdate: "20.11.88"
-        };
+    updatedUserExpectedResult = {
+      id: "df229c80-7432-4951-9f21-a1c5f803a738",
+      email: "Desoul40@mail.ru",
+      password: userPasswordHashed,
+      role: "USER",
+      name: "Slava",
+      birthdate: "20.11.90",
+    };
 
-        loginUserDto = {
-            email: "Desoul40@mail.ru",
-            password: passwordGenerated
-        }
+    done();
+  });
 
-        deletedUserResponseData = {
-            email: "Desoul40@mail.ru",
-            password: userPasswordHashed,
-            role: "USER",
-            name: "John",
-            birthdate: "20.11.88"
-        };
+  it("/users (POST) - create - success (should return created user)", async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+        expect(body.email).toEqual(createdUserExpectedResult.email);
+        expect(body.name).toEqual(createdUserExpectedResult.name);
+        expect(body.password).toEqual(createdUserExpectedResult.password);
+        expect(body.birthdate).toEqual(createdUserExpectedResult.birthdate);
+        expect(body.id).toEqual(expect.any(String));
+      });
 
-        createdUserExpectedResult = {
-            id: "df229c80-7432-4951-9f21-a1c5f803a738",
-            email : "Desoul40@mail.ru",
-            password: userPasswordHashed,
-            role: "USER",
-            name : "John",
-            birthdate: "20.11.88"
-        };
+    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
 
-        updatedUserExpectedResult = {
-            id: "df229c80-7432-4951-9f21-a1c5f803a738",
-            email : "Desoul40@mail.ru",
-            password: userPasswordHashed,
-            role: "USER",
-            name: "Slava",
-            birthdate: "20.11.90"
-        };
+    done();
+  });
 
-        adminUserResponseData = {
-            id: '7e5b1333-cdec-11eb-8230-0242ac150002',
-            email: 'Desoul24@mail.ru',
-            password: userPasswordHashed,
-            role: 'ADMIN',
-            name: 'slava',
-            birthdate: '20.11.1988'
-        };
+  it('/users (POST) - create - fail (response status 400 with error message "User with this email already exists")', async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-        done();
-    });
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(400, {
+        statusCode: 400,
+        message: "User with this email already exists",
+      });
 
-    it('/users (POST) - create - success (should return created user)', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-                expect(body.email).toEqual(createdUserExpectedResult.email);
-                expect(body.name).toEqual(createdUserExpectedResult.name);
-                expect(body.password).toEqual(createdUserExpectedResult.password);
-                expect(body.birthdate).toEqual(createdUserExpectedResult.birthdate);
-                expect(body.id).toEqual(expect.any(String));
-            });
+    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200);
+    done();
+  });
 
-        done();
-    });
+  it("/users (POST) - create - fail (response status 400 with some validation message - invalid password and email)", async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(invalidTypeCreateUserDto)
+      .expect(400, ["email - invalid email", "password - must be a string"]);
 
-    it('/users (POST) - create - fail (response status 400 with error message "User with this email already exists")', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-            });
+    done();
+  });
 
-        await request(app.getHttpServer())
-        .post('/users')
-            .send(createUserDto)
-            .expect(400, {
-                statusCode: 400,
-                message: "User with this email already exists"
-            });
+  it("/users (GET) - getAllUsers - success (should return users array)", async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200);
+    await request(app.getHttpServer())
+      .get("/users")
+      .expect("Content-Type", /json/)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        expect(body.length).toBeGreaterThan(0);
+        expect(body[0].email).toBeDefined();
+        expect(body[0].name).toBeDefined();
+        expect(body[0].password).toBeDefined();
+        expect(body[0].birthdate).toBeDefined();
+        expect(body[0].id).toBeDefined();
+      });
 
-        done();
-    });
+    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
 
-    it('/users (POST) - create - fail (response status 400 with some validation message - invalid password and email)', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(invalidTypeCreateUserDto)
-            .expect(400, [
-                "email - invalid email",
-                "password - must be a string"
-            ]);
+    done();
+  });
 
-        done();
-    });
-    
-    it('/users (GET) - getAllUsers - success (should return users array)', async (done) => {
-        await request(app.getHttpServer())
-            .get('/users')
-            .expect('Content-Type', /json/)
-            .expect(200)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-                expect(body[0].email).toEqual(adminUserResponseData.email);
-                expect(body[0].name).toEqual(adminUserResponseData.name);
-                expect(body[0].password).toEqual(expect.any(String));
-                expect(body[0].birthdate).toEqual(adminUserResponseData.birthdate);
-                expect(body[0].id).toEqual(expect.any(String));
-            });
+  it("/users (UPDATE) - update - success (should return updated user)", async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-        done();
-    });
+    await queryRunner.query(
+      "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
+        userPasswordHashed +
+        "','ADMIN', 'slava', '20.11.1988')"
+    );
 
-    it('/users (UPDATE) - update - success (should return updated user)', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-            });
+    const { body } = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send(loginAdminDto);
 
-        await queryRunner.query(
-            "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" + userPasswordHashed + "','ADMIN', 'slava', '20.11.1988')"
-        );
+    token = body.token;
 
-        const { body } = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send(loginAdminDto);
-            
-        token = body.token;
+    await request(app.getHttpServer())
+      .put(`/users/${userId}`)
+      .set("Authorization", "Bearer " + token)
+      .send(updateUserDto)
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        expect(body.email).toEqual(updatedUserExpectedResult.email);
+        expect(body.name).toEqual(updatedUserExpectedResult.name);
+        expect(body.password).toEqual(createdUserExpectedResult.password);
+        expect(body.birthdate).toEqual(updatedUserExpectedResult.birthdate);
+        expect(body.id).toEqual(expect.any(String));
+      });
 
-        await request(app.getHttpServer())
-            .put(`/users/${userId}`)
-            .set('Authorization', 'Bearer ' + token)
-            .send(updateUserDto)
-            .expect(200)
-            .then(({ body }: request.Response) => {
-                expect(body.email).toEqual(updatedUserExpectedResult.email);
-                expect(body.name).toEqual(updatedUserExpectedResult.name);
-                expect(body.password).toEqual(createdUserExpectedResult.password);
-                expect(body.birthdate).toEqual(updatedUserExpectedResult.birthdate);
-                expect(body.id).toEqual(expect.any(String));
-            });
+    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200);
+    await queryRunner.query(
+      "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
+    );
 
-        await queryRunner.query(
-            "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
-        ); 
+    done();
+  });
 
-        done();
-    });
+  it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!")', async (done) => {
+    await request(app.getHttpServer())
+      .put(`/users/${userId}`)
+      .send(updateUserDto)
+      .expect(401, {
+        statusCode: 401,
+        message: "User is not authorized!",
+      });
 
-    it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!")', async (done) => {
-        await request(app.getHttpServer())
-            .put(`/users/${userId}`)
-            .send(updateUserDto)
-            .expect(401, {
-                "statusCode": 401,
-                "message": "User is not authorized!"
-            });
+    done();
+  });
 
-        done();
-    });
+  it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when role is USER)', async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-    it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when role is USER)', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-            });
+    const { body } = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send(loginUserDto);
 
-        const { body } = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send(loginUserDto);
-            
-        token = body.token;
+    token = body.token;
 
-        await request(app.getHttpServer())
-            .put(`/users/${userId}`)
-            .set('Authorization', 'Bearer ' + token)
-            .send(updateUserDto)
-            .expect(403, {
-                "statusCode": 403,
-                "message": "Access forbidden!"
-            })
-           
+    await request(app.getHttpServer())
+      .put(`/users/${userId}`)
+      .set("Authorization", "Bearer " + token)
+      .send(updateUserDto)
+      .expect(403, {
+        statusCode: 403,
+        message: "Access forbidden!",
+      });
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200);
+    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
 
-        done();
-    });
-    
-    it('/users (UPDATE) - update - fail (response status 404 with message "No such user!")', async (done) => {
-        await queryRunner.query(
-            "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" + userPasswordHashed + "','ADMIN', 'slava', '20.11.1988')"
-        );
+    done();
+  });
 
-        const { body } = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send(loginAdminDto);
-            
-        token = body.token;
+  it('/users (UPDATE) - update - fail (response status 404 with message "No such user!")', async (done) => {
+    await queryRunner.query(
+      "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
+        userPasswordHashed +
+        "','ADMIN', 'slava', '20.11.1988')"
+    );
 
-        await request(app.getHttpServer())
-            .put(`/users/${unexistingUserId}`)
-            .set('Authorization', 'Bearer ' + token)
-            .send(updateUserDto)
-            .expect(404, {
-                "statusCode": 404,
-                "message": "No such user!"
-            });
+    const { body } = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send(loginAdminDto);
 
-        await queryRunner.query(
-            "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
-        ); 
+    token = body.token;
 
-        done();
-    });
+    await request(app.getHttpServer())
+      .put(`/users/${unexistingUserId}`)
+      .set("Authorization", "Bearer " + token)
+      .send(updateUserDto)
+      .expect(404, {
+        statusCode: 404,
+        message: "No such user!",
+      });
 
-    it('/users (UPDATE) - update - fail (response status 400 with some validation message)', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-            });
+    await queryRunner.query(
+      "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
+    );
 
-        await queryRunner.query(
-            "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" + userPasswordHashed + "','ADMIN', 'slava', '20.11.1988')"
-        );
+    done();
+  });
 
-        const { body } = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send(loginAdminDto);
-            
-        token = body.token;
+  it("/users (UPDATE) - update - fail (response status 400 with some validation message)", async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-        await request(app.getHttpServer())
-            .put(`/users/${userId}`)
-            .set('Authorization', 'Bearer ' + token)
-            .send(invalidUpdateUserDto)
-            .expect(400, [
-                "name - must be a string",
-                "birthdate - The field must not be empty!"
-            ]);
+    await queryRunner.query(
+      "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
+        userPasswordHashed +
+        "','ADMIN', 'slava', '20.11.1988')"
+    );
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200);
+    const { body } = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send(loginAdminDto);
 
-        await queryRunner.query(
-            "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
-        ); 
+    token = body.token;
 
-        done();
-    });
+    await request(app.getHttpServer())
+      .put(`/users/${userId}`)
+      .set("Authorization", "Bearer " + token)
+      .send(invalidUpdateUserDto)
+      .expect(400, [
+        "name - must be a string",
+        "birthdate - The field must not be empty!",
+      ]);
 
-    it('/users (DELETE) - delete - success (should return deleted user object with status 200")', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-            });
+    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200, deletedUserResponseData);
+    await queryRunner.query(
+      "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
+    );
 
-        done();
-    });
+    done();
+  });
 
-    it('/users (DELETE) - delete - fail (should return 404 with message "No such user!")', async (done) => {
-        await request(app.getHttpServer())
-            .post('/users')
-            .send(createUserDto)
-            .expect(201)
-            .then(({ body }: request.Response) => {
-                userId = body.id;
-            });
+  it('/users (DELETE) - delete - success (should return deleted user object with status 200")', async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-        await request(app.getHttpServer())
-        .delete(`/users/${unexistingUserId}`)
-        .expect(404, {
-            "statusCode": 404,
-            "message": "No such user!"
-        });
+    await request(app.getHttpServer())
+      .delete(`/users/${userId}`)
+      .expect(200, deletedUserResponseData);
 
-        await request(app.getHttpServer())
-            .delete(`/users/${userId}`)
-            .expect(200, deletedUserResponseData);
+    done();
+  });
 
-        done();
-    });
+  it('/users (DELETE) - delete - fail (should return 404 with message "No such user!")', async (done) => {
+    await request(app.getHttpServer())
+      .post("/users")
+      .send(createUserDto)
+      .expect(201)
+      .then(({ body }: request.Response) => {
+        userId = body.id;
+      });
 
-    afterAll(async (done) => {
-        await app.close();
-        done();
-    });
+    await request(app.getHttpServer())
+      .delete(`/users/${unexistingUserId}`)
+      .expect(404, {
+        statusCode: 404,
+        message: "No such user!",
+      });
+
+    await request(app.getHttpServer())
+      .delete(`/users/${userId}`)
+      .expect(200, deletedUserResponseData);
+
+    done();
+  });
+
+  afterAll(async (done) => {
+    await app.close();
+    done();
+  });
 });
