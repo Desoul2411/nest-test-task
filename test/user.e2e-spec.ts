@@ -11,6 +11,8 @@ import { User } from "../src/modules/users/entities/user.entity";
 import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
 import { QueryRunner } from "typeorm";
 import { UserDeleted } from "../src/types/user.type";
+import * as dotenv from "dotenv";
+
 
 describe("UsersController (e2e)", () => {
   let app: INestApplication;
@@ -44,6 +46,8 @@ describe("UsersController (e2e)", () => {
     connection = getConnection();
     queryRunner = connection.createQueryRunner();
     await queryRunner.connect();
+
+    console.log('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA);
 
     unexistingUserId = "df229c80-7432-4951-9f21-a1c5f803a333";
     passwordGenerated = generateString(12);

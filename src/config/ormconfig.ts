@@ -12,7 +12,7 @@ const ormconfig: TypeOrmModuleOptions = {
   database: process.env.MYSQL_DATABASE,
   entities: ["dist" + "/**/*.entity{.ts,.js}"],
   autoLoadEntities: true,
-  dropSchema: true,
+  dropSchema: JSON.parse(process.env.DEFAULT_DB_DROP_SCHEMA),
   synchronize: false,
   migrationsRun: JSON.parse(process.env.DEFAULT_DB_RUN_MIGRATIONS),
   logging: JSON.parse(process.env.DEFAULT_DB_LOGGING),
