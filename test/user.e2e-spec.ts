@@ -12,12 +12,14 @@ import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
 import { QueryRunner } from "typeorm";
 import { UserDeleted } from "../src/types/user.type";
 import * as dotenv from "dotenv";
-
+/* const path = require("path");
+const { DockerComposeEnvironment } = require("testcontainers"); */
 
 describe("UsersController (e2e)", () => {
   let app: INestApplication;
   let queryRunner: QueryRunner;
   let connection: Connection;
+  //let environment;
 
   let userId: string;
   let unexistingUserId: string;
@@ -39,6 +41,14 @@ describe("UsersController (e2e)", () => {
       imports: [AppModule],
     }).compile();
 
+    //testcontainers
+  /*   const composeFilePath = path.resolve(__dirname, "docker-compose-test.yml");
+    const composeFile = "docker-compose-test.yml";
+
+    environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
+
+    console.log('environment', environment); */
+
     app = module.createNestApplication();
     app.get(Connection);
     await app.init();
@@ -46,9 +56,7 @@ describe("UsersController (e2e)", () => {
     connection = getConnection();
     queryRunner = connection.createQueryRunner();
     await queryRunner.connect();
-
-    console.log('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA);
-
+    
     unexistingUserId = "df229c80-7432-4951-9f21-a1c5f803a333";
     passwordGenerated = generateString(12);
     userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
@@ -386,6 +394,7 @@ describe("UsersController (e2e)", () => {
 
   afterAll(async (done) => {
     await app.close();
+    //await environment.down();
     done();
   });
 });

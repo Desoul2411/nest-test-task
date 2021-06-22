@@ -1,0 +1,39 @@
+version: "3.0"
+
+services:
+  app:
+    container_name: nest-test-app
+    build:
+      context: .
+      target: nest-test-app 
+    volumes:
+      - .:/app
+      - /app/node_modules 
+    working_dir: /app
+    command: npm run test:e2e
+    env_file:
+      - .env
+    ports:
+      - "5500:3000"
+    networks:
+      - webnet
+    depends_on:
+      - mysql
+    restart: always
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    networks:
+      - webnet
+    env_file:
+      - .env
+    ports:
+      - "6033:3306"
+    volumes:
+      - ./seed.db.sql:/docker-entrypoint-initdb.d/db.sql
+      - dbstore:/var/lib/nest-test-app
+    restart: always
+networks:
+  webnet:
+volumes:
+  dbstore:

@@ -17,9 +17,6 @@ services:
     image: mysql:8.0
     env_file:
       - .env
-    environment:
-      MYSQL_DATABASE: test_db
-      MYSQL_ROOT_PASSWORD: 1
     ports:
       - "6033:3306"
     volumes:

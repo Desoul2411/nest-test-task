@@ -97,7 +97,8 @@ describe("UsersController (e2e)", () => {
       .send(loginUserDto)
       .expect(201)
       .then(({ body }: request.Response) => {
-        expect(body.token).toEqual(expect.any(String));
+        expect(body.token).toBeDefined();
+        expect(body.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/);
       });
 
     await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
@@ -141,6 +142,8 @@ describe("UsersController (e2e)", () => {
       .send(invalidPasswordDTO)
       .expect(401, {
         message: "Invalid password!",
+      }).then(({ body }: request.Response) => {
+        expect(body.token).not.toBeDefined();
       });
 
     await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
@@ -225,6 +228,7 @@ describe("UsersController (e2e)", () => {
 
   afterAll(async (done) => {
     await app.close();
+    
     done();
   });
 });
