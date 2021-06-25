@@ -12,25 +12,24 @@ services:
     working_dir: /app
     command: npm run test:e2e
     env_file:
-      - .env
+      - ./test/settings/.test.env
     ports:
-      - "5500:3000"
+      - "3500:3000"
     networks:
       - webnet
     depends_on:
       - mysql
     restart: always
   mysql:
-    container_name: mysql
+    container_name: mysql-test
     image: mysql:8.0
     networks:
       - webnet
     env_file:
-      - .env
+      - ./test/settings/.test.env
     ports:
       - "6033:3306"
     volumes:
-      - ./seed.db.sql:/docker-entrypoint-initdb.d/db.sql
       - dbstore:/var/lib/nest-test-app
     restart: always
 networks:

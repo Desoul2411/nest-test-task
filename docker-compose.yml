@@ -18,7 +18,7 @@ services:
     env_file:
       - .env
     ports:
-      - "6033:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - dbstore:/var/lib/nest-test
     restart: always

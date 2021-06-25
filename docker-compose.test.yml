@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  mysql-test:
+    container_name: mysql-test
+    image: mysql:8.0
+    env_file:
+      - ./test/settings/.test.env
+    ports:
+      - "6033:3306"
+    restart: always

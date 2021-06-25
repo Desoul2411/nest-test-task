@@ -12,6 +12,7 @@ import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
 import { QueryRunner } from "typeorm";
 import { UserDeleted } from "../src/types/user.type";
 import * as dotenv from "dotenv";
+//const { GenericContainer } = require("testcontainers");
 /* const path = require("path");
 const { DockerComposeEnvironment } = require("testcontainers"); */
 
@@ -41,14 +42,6 @@ describe("UsersController (e2e)", () => {
       imports: [AppModule],
     }).compile();
 
-    //testcontainers
-  /*   const composeFilePath = path.resolve(__dirname, "docker-compose-test.yml");
-    const composeFile = "docker-compose-test.yml";
-
-    environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
-
-    console.log('environment', environment); */
-
     app = module.createNestApplication();
     app.get(Connection);
     await app.init();
@@ -56,6 +49,18 @@ describe("UsersController (e2e)", () => {
     connection = getConnection();
     queryRunner = connection.createQueryRunner();
     await queryRunner.connect();
+
+
+    //testcontainers
+    /* const composeFilePath = path.resolve(__dirname, '/');
+    const composeFile = "docker-compose.test.yml";
+
+    console.log('composeFilePath',composeFilePath );
+
+    environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
+
+    console.log('environment', environment);
+ */
     
     unexistingUserId = "df229c80-7432-4951-9f21-a1c5f803a333";
     passwordGenerated = generateString(12);
