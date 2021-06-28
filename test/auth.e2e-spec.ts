@@ -9,8 +9,10 @@ import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
 import { QueryRunner } from "typeorm";
 import { Connection, getConnection } from "typeorm";
 import { ReigestrationSuccessResponse } from "src/types/auth.type";
+import { downEnv, Environment, setupEnv } from './environment';
 
 describe("UsersController (e2e)", () => {
+  const environment: Environment = Environment.Instance;
   let app: INestApplication;
   let queryRunner: QueryRunner;
   let connection: Connection;
@@ -27,6 +29,8 @@ describe("UsersController (e2e)", () => {
   let registerUserExpectedResult: ReigestrationSuccessResponse;
 
   beforeAll(async (done) => {
+    await setupEnv();  // setup environment
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -228,7 +232,7 @@ describe("UsersController (e2e)", () => {
 
   afterAll(async (done) => {
     await app.close();
-    
+    downEnv();
     done();
   });
 });

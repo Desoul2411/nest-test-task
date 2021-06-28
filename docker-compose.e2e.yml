@@ -5,10 +5,6 @@ services:
     container_name: nest-test-app
     build:
       context: .
-      target: nest-test-app 
-    volumes:
-      - .:/app
-      - /app/node_modules 
     working_dir: /app
     command: npm run test:e2e
     env_file:
@@ -18,10 +14,10 @@ services:
     networks:
       - webnet
     depends_on:
-      - mysql
-    restart: always
-  mysql:
-    container_name: mysql-test
+      - mysql-e2e-test
+    restart: unless-stopped
+  mysql-e2e-test:
+    container_name: mysql-e2e-test
     image: mysql:8.0
     networks:
       - webnet
@@ -29,10 +25,6 @@ services:
       - ./test/settings/.test.env
     ports:
       - "6033:3306"
-    volumes:
-      - dbstore:/var/lib/nest-test-app
-    restart: always
+    restart: unless-stopped
 networks:
   webnet:
-volumes:
-  dbstore:
