@@ -6,7 +6,6 @@ services:
     build:
       context: .
     working_dir: /app
-    command: npm run test:e2e
     env_file:
       - ./test/settings/.test.env
     ports:
