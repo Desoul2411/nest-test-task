@@ -48,7 +48,7 @@ export class Environment {
       .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
       .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
       .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
-      .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 9000/))
+      //.withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 9000/))
       .up();
      /*  .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 5000/))
       .withWaitStrategy('srv-socket-cluster-service', Wait.forLogMessage(/Successfully connected a RabbitMQ channel/)) */
@@ -100,6 +100,7 @@ export class Environment {
 
 const environmentInstance = Environment.Instance;
 
+console.log('environmentInstance 1', environmentInstance);
 export const setupEnv = async (): Promise<void> => {
 /*   beforeAll(async () => {
     try { */
@@ -118,13 +119,12 @@ export const setupEnv = async (): Promise<void> => {
   }); */
 };
 
-export const downEnv = (): void => {
-  afterAll(async () => {
+export const downEnv = async (): Promise<void> => {
+  console.log('environmentInstance 2', await environmentInstance.getEnvironment());
     try {
      // await environmentInstance.getAmqpConnection().connection.close();
       await environmentInstance.getEnvironment().down();
     } catch (error) {
       console.log(error);
     }
-  });
 };

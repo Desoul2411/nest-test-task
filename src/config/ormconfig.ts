@@ -3,6 +3,9 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
+console.log( 'port',process.env.HTTP_PORT);
+  console.log('host',process.env.MYSQL_HOST );
+
 const ormconfig: TypeOrmModuleOptions = {
   type: "mysql",
   host: process.env.MYSQL_HOST,

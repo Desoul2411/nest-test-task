@@ -1,5 +1,5 @@
 jest.useFakeTimers();
-jest.setTimeout(200000);
+jest.setTimeout(40000);
 
 /* import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common"; */
@@ -15,7 +15,7 @@ import { Connection, getConnection } from "typeorm";
 import { ReigestrationSuccessResponse } from "src/types/auth.type";
 import { downEnv, Environment, setupEnv } from './environment';
 
-describe("UsersController (e2e)", () => {
+describe("AuthController (e2e)", () => {
   const environment: Environment = Environment.Instance;
  // let app: INestApplication;
   let queryRunner: QueryRunner;
@@ -85,22 +85,25 @@ describe("UsersController (e2e)", () => {
 
   it("/auth (POST) - login - success (should return token)", async (done) => {
 
-   /*  try {
-      const res = await superagent.post('http://localhost:9000/users');
+    /* try {
+      const res = await superagent.post('http://localhost:9000/api/users')
+      .send(createUserDto);
       console.log(res);
     } catch (err) {
       console.error(err);
     }  */
 
-    await request('http://localhost:9000')
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
       .then(({ body }: request.Response) => {
+        console.log(createUserDto);
         userId = body.id;
+
       });
 
-    await request('http://localhost:9000')
+/*     await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(loginUserDto)
       .expect(201)
@@ -109,7 +112,7 @@ describe("UsersController (e2e)", () => {
         expect(body.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/);
       });
 
-    await request('http://localhost:9000').delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200); */
 
     done();
   });
@@ -236,7 +239,7 @@ describe("UsersController (e2e)", () => {
 
   afterAll(async (done) => {
    // await app.close();
-    downEnv();
+    await downEnv();
     done();
   });
 });

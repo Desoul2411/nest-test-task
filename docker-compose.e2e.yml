@@ -9,6 +9,8 @@ services:
     working_dir: /app
     env_file:
       - ./test/settings/.test.env
+    ports:
+      - "9000:9000"
     networks:
       - webnet
     depends_on:
