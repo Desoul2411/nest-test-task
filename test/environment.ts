@@ -36,7 +36,7 @@ export class Environment {
   }
 
   public async createEnvironment(): Promise<void> {
-    console.log('PORT', process.env.PORT);
+    console.log('PORT', process.env.PORT);  //9000
     this.environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
       .withEnv('PORT', process.env.PORT as string)
       .withEnv('MYSQL_HOST', process.env.MYSQL_HOST)
