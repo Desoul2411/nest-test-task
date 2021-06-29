@@ -1,6 +1,10 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { INestApplication } from "@nestjs/common";
+jest.useFakeTimers();
+jest.setTimeout(10000);
+
+/* import { Test, TestingModule } from "@nestjs/testing";
+import { INestApplication } from "@nestjs/common"; */
 import * as request from "supertest";
+const superagent = require('superagent');
 import { AppModule } from "../src/app.module";
 import { CreateUserDto } from "../src/modules/users/dto/create-user.dto";
 import { generateString } from "../src/utils/generators.utils";
@@ -13,7 +17,7 @@ import { downEnv, Environment, setupEnv } from './environment';
 
 describe("UsersController (e2e)", () => {
   const environment: Environment = Environment.Instance;
-  let app: INestApplication;
+ // let app: INestApplication;
   let queryRunner: QueryRunner;
   let connection: Connection;
 
@@ -30,14 +34,6 @@ describe("UsersController (e2e)", () => {
 
   beforeAll(async (done) => {
     await setupEnv();  // setup environment
-
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = module.createNestApplication();
-    app.get(Connection);
-    await app.init();
 
     connection = getConnection();
     queryRunner = connection.createQueryRunner();
@@ -88,7 +84,15 @@ describe("UsersController (e2e)", () => {
   });
 
   it("/auth (POST) - login - success (should return token)", async (done) => {
-    await request(app.getHttpServer())
+
+   /*  try {
+      const res = await superagent.post('http://localhost:9000/users');
+      console.log(res);
+    } catch (err) {
+      console.error(err);
+    }  */
+
+    await request('http://localhost:9000')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -96,7 +100,7 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000')
       .post("/auth/login")
       .send(loginUserDto)
       .expect(201)
@@ -105,12 +109,12 @@ describe("UsersController (e2e)", () => {
         expect(body.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/);
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
-  it("/auth (POST) - login - fail (response status 400 with some validation message - password and email)", async (done) => {
+  /* it("/auth (POST) - login - fail (response status 400 with some validation message - password and email)", async (done) => {
     await request(app.getHttpServer())
       .post("/users")
       .send(createUserDto)
@@ -228,10 +232,10 @@ describe("UsersController (e2e)", () => {
     );
 
     done();
-  });
+  }); */
 
   afterAll(async (done) => {
-    await app.close();
+   // await app.close();
     downEnv();
     done();
   });

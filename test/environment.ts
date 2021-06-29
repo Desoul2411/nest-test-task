@@ -36,8 +36,9 @@ export class Environment {
   }
 
   public async createEnvironment(): Promise<void> {
-    console.log('composeFilePath', composeFilePath);
+    console.log('PORT', process.env.PORT);
     this.environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
+      .withEnv('PORT', process.env.PORT as string)
       .withEnv('MYSQL_HOST', process.env.MYSQL_HOST)
       .withEnv('MYSQL_ROOT_PASSWORD', process.env.MYSQL_ROOT_PASSWORD as string)
       .withEnv('MYSQL_USER', process.env.MYSQL_USER as string)
@@ -47,8 +48,9 @@ export class Environment {
       .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
       .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
       .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
+      .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 9000/))
       .up();
-     /*  .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server startup complete/))
+     /*  .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 5000/))
       .withWaitStrategy('srv-socket-cluster-service', Wait.forLogMessage(/Successfully connected a RabbitMQ channel/)) */
     
   }

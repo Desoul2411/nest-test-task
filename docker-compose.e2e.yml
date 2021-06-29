@@ -1,3 +1,4 @@
+
 version: "3.0"
 
 services:
@@ -8,8 +9,6 @@ services:
     working_dir: /app
     env_file:
       - ./test/settings/.test.env
-    ports:
-      - "3500:3000"
     networks:
       - webnet
     depends_on:
