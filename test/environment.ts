@@ -2,16 +2,6 @@ import * as path from "path";
 import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from 'testcontainers';
 import * as dotenv from "dotenv";
 
-
-/* console.log(`============ env-setup (environment) Loaded ===========`);
-dotenv.config({ path: path.resolve(process.cwd(), 'test', 'settings', '.test.env') }); */
-
-/* import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-
-import { rabbitmqExchanges } from 'enums/rabbitmq';
- */
-/* import configuration, { Config } from '../config/configuration'; */
-
 const composeFile = 'docker-compose.e2e.yml';
 const composeFilePath = path.resolve(__dirname, `..`);
 
@@ -19,9 +9,6 @@ const composeFilePath = path.resolve(__dirname, `..`);
 export class Environment {
   private static instance: Environment;
   private environment: StartedDockerComposeEnvironment;
-/*   private amqpConnection: AmqpConnection;
-  private config: Config;
- */
 
 /*   private constructor() {
     this.config = configuration();
@@ -36,7 +23,6 @@ export class Environment {
   }
 
   public async createEnvironment(): Promise<void> {
-    console.log('PORT', process.env.PORT);  //9000
     this.environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
       .withEnv('PORT', process.env.PORT as string)
       .withEnv('MYSQL_HOST', process.env.MYSQL_HOST)
@@ -48,32 +34,11 @@ export class Environment {
       .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
       .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
       .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
-      //.withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 9000/))
+      .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 9000/))
+      //.withWaitStrategy("postgres_1", Wait.forHealthCheck())
       .up();
-     /*  .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/Server started on port = 5000/))
-      .withWaitStrategy('srv-socket-cluster-service', Wait.forLogMessage(/Successfully connected a RabbitMQ channel/)) */
-    
   }
       
-
-/*   public createAmpqConnection(): void {
-    this.amqpConnection = new AmqpConnection({
-      connectionInitOptions: { timeout: 30000, wait: true },
-      exchanges: [{ name: rabbitmqExchanges.main }],
-      uri: this.config.amqp_url,
-    });
-  } */
-
-
-/* 
-  public async initAmpqConnection(): Promise<void> {
-    await this.amqpConnection.init();
-  }
-
-  public getAmqpConnection(): AmqpConnection {
-    return this.amqpConnection;
-  }
- */
   public getEnvironment(): StartedDockerComposeEnvironment {
     return this.environment;
   }
@@ -102,21 +67,12 @@ const environmentInstance = Environment.Instance;
 
 console.log('environmentInstance 1', environmentInstance);
 export const setupEnv = async (): Promise<void> => {
-/*   beforeAll(async () => {
-    try { */
-
     try {
       await environmentInstance.createEnvironment();
+      console.log(213213213213213);
     } catch (error) {
       console.log(error);
     }
-      
-/*       environmentInstance.createAmpqConnection();
-      await environmentInstance.initAmpqConnection(); */
-/*     } catch (error) {
-      console.log(error);
-    }
-  }); */
 };
 
 export const downEnv = async (): Promise<void> => {

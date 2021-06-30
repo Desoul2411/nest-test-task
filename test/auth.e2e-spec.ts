@@ -1,9 +1,11 @@
 jest.useFakeTimers();
-jest.setTimeout(40000);
+jest.setTimeout(200000);
 
 /* import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common"; */
+import * as path from "path";
 import * as request from "supertest";
+const fetch = require('node-fetch');
 const superagent = require('superagent');
 import { AppModule } from "../src/app.module";
 import { CreateUserDto } from "../src/modules/users/dto/create-user.dto";
@@ -14,9 +16,11 @@ import { QueryRunner } from "typeorm";
 import { Connection, getConnection } from "typeorm";
 import { ReigestrationSuccessResponse } from "src/types/auth.type";
 import { downEnv, Environment, setupEnv } from './environment';
+import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from 'testcontainers';
+//import  { createUserDto } from './test-data';
 
 describe("AuthController (e2e)", () => {
-  const environment: Environment = Environment.Instance;
+  let environment;
  // let app: INestApplication;
   let queryRunner: QueryRunner;
   let connection: Connection;
@@ -31,10 +35,33 @@ describe("AuthController (e2e)", () => {
   let invalidPasswordDTO: LoginUserDto;
   let unexistingUserDTO: LoginUserDto;
   let registerUserExpectedResult: ReigestrationSuccessResponse;
+  
 
   beforeAll(async (done) => {
-    await setupEnv();  // setup environment
+    const composeFile = 'docker-compose.e2e.yml';
+    const composeFilePath = path.resolve(__dirname, `..`);
 
+    //await setupEnv(); // setup environment
+    try {
+      environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
+      .withEnv('PORT', process.env.PORT as string)
+      .withEnv('MYSQL_HOST', process.env.MYSQL_HOST)
+      .withEnv('MYSQL_ROOT_PASSWORD', process.env.MYSQL_ROOT_PASSWORD as string)
+      .withEnv('MYSQL_USER', process.env.MYSQL_USER as string)
+      .withEnv('MYSQL_PASSWORD', process.env.MYSQL_PASSWORD as string)
+      .withEnv('MYSQL_DATABASE', process.env.MYSQL_DATABASE as string)
+      .withEnv('DEFAULT_DB_RUN_MIGRATIONS', process.env.DEFAULT_DB_RUN_MIGRATIONS as string)
+      .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
+      .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
+      .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
+      .withWaitStrategy('app', Wait.forLogMessage(/Server started on port = 9000/))
+      .withWaitStrategy("mysql-e2e-test", Wait.forHealthCheck())
+      .up();
+    } catch (error) {
+      console.log(error);
+    }
+    console.log('Environment up and running'); // no log
+    
     connection = getConnection();
     queryRunner = connection.createQueryRunner();
     await queryRunner.connect();
@@ -84,7 +111,7 @@ describe("AuthController (e2e)", () => {
   });
 
   it("/auth (POST) - login - success (should return token)", async (done) => {
-
+    console.log('createUserDto',createUserDto);
     /* try {
       const res = await superagent.post('http://localhost:9000/api/users')
       .send(createUserDto);
@@ -93,17 +120,44 @@ describe("AuthController (e2e)", () => {
       console.error(err);
     }  */
 
+ /*    createUserDto = {
+      email: "Desoul40@mail.ru",
+      password: userPasswordHashed,
+      name: "John",
+      birthdate: "20.11.88",
+    }; */
+    
+
+/*     fetch('http://localhost:9000/api/users', 
+    { 
+      method: 'POST',
+      body: JSON.stringify(createUserDto ),
+    })
+    .then(res => res.json()) 
+    .then(json => console.log(json));
+ */
+
+
+
+
+    await request('http://localhost:9000/api')
+      .get("/users")
+      .expect(200)
+      .then(({ body }: request.Response) => {
+        console.log(body);
+      });
+
+
     await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
       .then(({ body }: request.Response) => {
-        console.log(createUserDto);
+        console.log('result',createUserDto);
         userId = body.id;
-
       });
 
-/*     await request('http://localhost:9000/api')
+    await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(loginUserDto)
       .expect(201)
@@ -112,7 +166,7 @@ describe("AuthController (e2e)", () => {
         expect(body.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/);
       });
 
-    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200); */
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
@@ -239,7 +293,8 @@ describe("AuthController (e2e)", () => {
 
   afterAll(async (done) => {
    // await app.close();
-    await downEnv();
+   // await downEnv();
+   await environment.down();
     done();
   });
 });
