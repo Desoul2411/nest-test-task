@@ -1,5 +1,5 @@
 jest.useFakeTimers();
-jest.setTimeout(200000);
+jest.setTimeout(60000);
 
 /* import { Test, TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common"; */
@@ -42,6 +42,8 @@ describe("AuthController (e2e)", () => {
     const composeFilePath = path.resolve(__dirname, `..`);
 
     //await setupEnv(); // setup environment
+    
+    console.log("1");
     try {
       environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
       .withEnv('PORT', process.env.PORT as string)
@@ -54,9 +56,11 @@ describe("AuthController (e2e)", () => {
       .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
       .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
       .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
-      .withWaitStrategy('app', Wait.forLogMessage(/Server started on port = 9000/))
-      .withWaitStrategy("mysql-e2e-test", Wait.forHealthCheck())
+      //.withWaitStrategy('nest-test-app', Wait.forLogMessage(/Server started on port = 9000/))
+      //.withWaitStrategy("mysql-e2e-test", Wait.forHealthCheck())
       .up();
+
+      console.log('2'); // no log
     } catch (error) {
       console.log(error);
     }
@@ -136,9 +140,6 @@ describe("AuthController (e2e)", () => {
     .then(res => res.json()) 
     .then(json => console.log(json));
  */
-
-
-
 
     await request('http://localhost:9000/api')
       .get("/users")
