@@ -5,8 +5,8 @@ jest.setTimeout(60000);
 import { INestApplication } from "@nestjs/common"; */
 import * as path from "path";
 import * as request from "supertest";
-const fetch = require('node-fetch');
-const superagent = require('superagent');
+/* const fetch = require('node-fetch');
+const superagent = require('superagent'); */
 import { AppModule } from "../src/app.module";
 import { CreateUserDto } from "../src/modules/users/dto/create-user.dto";
 import { generateString } from "../src/utils/generators.utils";
@@ -37,7 +37,7 @@ describe("AuthController (e2e)", () => {
   let registerUserExpectedResult: ReigestrationSuccessResponse;
   
 
-  beforeAll(async (done) => {
+  beforeAll(async () => {
     const composeFile = 'docker-compose.e2e.yml';
     const composeFilePath = path.resolve(__dirname, `..`);
 
@@ -56,19 +56,27 @@ describe("AuthController (e2e)", () => {
       .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
       .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
       .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
-      //.withWaitStrategy('nest-test-app', Wait.forLogMessage(/Server started on port = 9000/))
-      //.withWaitStrategy("mysql-e2e-test", Wait.forHealthCheck())
+      .withWaitStrategy('nest-test-app', Wait.forLogMessage(/Server started on port = 9000/))
+      .withWaitStrategy("mysql-e2e-test", Wait.forLogMessage(/ready for connections./))
       .up();
-
-      console.log('2'); // no log
     } catch (error) {
       console.log(error);
     }
+
+    const mysqlContainer = environment.getContainer("mysql-e2e-test");
+      
     console.log('Environment up and running'); // no log
-    
-    connection = getConnection();
+
+   // await mysqlContainer.logs();
+    //await mysqlContainer.exec(["-i", "-t","mysql-e2e-test", "bash"])
+
+
+    /* connection = getConnection();
+    console.log('connection');
     queryRunner = connection.createQueryRunner();
-    await queryRunner.connect();
+    console.log('queryRunner');
+    await queryRunner.connect(); */
+    console.log(mysqlContainer);
 
     passwordGenerated = generateString(12);
     userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
@@ -111,36 +119,10 @@ describe("AuthController (e2e)", () => {
       password: "Kdasd34e3423r",
     };
 
-    done();
+    //done();
   });
 
   it("/auth (POST) - login - success (should return token)", async (done) => {
-    console.log('createUserDto',createUserDto);
-    /* try {
-      const res = await superagent.post('http://localhost:9000/api/users')
-      .send(createUserDto);
-      console.log(res);
-    } catch (err) {
-      console.error(err);
-    }  */
-
- /*    createUserDto = {
-      email: "Desoul40@mail.ru",
-      password: userPasswordHashed,
-      name: "John",
-      birthdate: "20.11.88",
-    }; */
-    
-
-/*     fetch('http://localhost:9000/api/users', 
-    { 
-      method: 'POST',
-      body: JSON.stringify(createUserDto ),
-    })
-    .then(res => res.json()) 
-    .then(json => console.log(json));
- */
-
     await request('http://localhost:9000/api')
       .get("/users")
       .expect(200)
@@ -172,8 +154,8 @@ describe("AuthController (e2e)", () => {
     done();
   });
 
-  /* it("/auth (POST) - login - fail (response status 400 with some validation message - password and email)", async (done) => {
-    await request(app.getHttpServer())
+  it("/auth (POST) - login - fail (response status 400 with some validation message - password and email)", async (done) => {
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -181,7 +163,7 @@ describe("AuthController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(invalidLoginUserDto)
       .expect(400, [
@@ -189,13 +171,13 @@ describe("AuthController (e2e)", () => {
         "password - must be between 5 and 14 characters, must be a string",
       ]);
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it('/auth (POST) - login - fail (response status 401 with message "Invalid email or password")', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -203,7 +185,7 @@ describe("AuthController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(invalidPasswordDTO)
       .expect(401, {
@@ -212,13 +194,13 @@ describe("AuthController (e2e)", () => {
         expect(body.token).not.toBeDefined();
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it('/auth (POST) - login - fail (response status 404 with message "No such user!")', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -226,7 +208,7 @@ describe("AuthController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(unexistingUserDTO)
       .expect(404, {
@@ -234,13 +216,13 @@ describe("AuthController (e2e)", () => {
         message: "No such user!",
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it("/auth (POST) - registration - success (should create new user and return confirmation message with status 201)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/registration")
       .send(createUserDto)
       .expect(201)
@@ -256,7 +238,7 @@ describe("AuthController (e2e)", () => {
   });
 
   it('/auth (POST) - registration - fail (response status 400 with message "User with this email already exists"))', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/registration")
       .send(createUserDto)
       .expect(201)
@@ -264,7 +246,7 @@ describe("AuthController (e2e)", () => {
         expect(body).toEqual(registerUserExpectedResult);
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/registration")
       .send(createUserDto)
       .expect(400, {
@@ -280,7 +262,7 @@ describe("AuthController (e2e)", () => {
   });
 
   it("/auth (POST) - registration - fail (response status 400 with validation messages)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/auth/registration")
       .send(invalidTypeCreateUserDto)
       .expect(400, ["email - invalid email", "password - must be a string"]);
@@ -290,7 +272,7 @@ describe("AuthController (e2e)", () => {
     );
 
     done();
-  }); */
+  });
 
   afterAll(async (done) => {
    // await app.close();
