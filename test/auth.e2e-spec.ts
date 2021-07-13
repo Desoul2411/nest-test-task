@@ -1,28 +1,19 @@
 jest.useFakeTimers();
 jest.setTimeout(60000);
 
-/* import { Test, TestingModule } from "@nestjs/testing";
-import { INestApplication } from "@nestjs/common"; */
 import * as path from "path";
 import * as request from "supertest";
-/* const fetch = require('node-fetch');
-const superagent = require('superagent'); */
-import { AppModule } from "../src/app.module";
 import { CreateUserDto } from "../src/modules/users/dto/create-user.dto";
 import { generateString } from "../src/utils/generators.utils";
 import * as bcrypt from "bcrypt";
 import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
-import { QueryRunner } from "typeorm";
-import { Connection, getConnection } from "typeorm";
+import { Connection, createConnection } from "typeorm";
 import { ReigestrationSuccessResponse } from "src/types/auth.type";
-import { downEnv, Environment, setupEnv } from './environment';
-import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from 'testcontainers';
-//import  { createUserDto } from './test-data';
+import { DockerComposeEnvironment, Wait } from 'testcontainers';
+import { downEnv, setupEnv } from "./environment";
 
 describe("AuthController (e2e)", () => {
   let environment;
- // let app: INestApplication;
-  let queryRunner: QueryRunner;
   let connection: Connection;
 
   let userId: string;
@@ -37,46 +28,21 @@ describe("AuthController (e2e)", () => {
   let registerUserExpectedResult: ReigestrationSuccessResponse;
   
 
-  beforeAll(async () => {
-    const composeFile = 'docker-compose.e2e.yml';
-    const composeFilePath = path.resolve(__dirname, `..`);
-
-    //await setupEnv(); // setup environment
-    
-    console.log("1");
+  beforeAll(async (done) => {
     try {
-      environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
-      .withEnv('PORT', process.env.PORT as string)
-      .withEnv('MYSQL_HOST', process.env.MYSQL_HOST)
-      .withEnv('MYSQL_ROOT_PASSWORD', process.env.MYSQL_ROOT_PASSWORD as string)
-      .withEnv('MYSQL_USER', process.env.MYSQL_USER as string)
-      .withEnv('MYSQL_PASSWORD', process.env.MYSQL_PASSWORD as string)
-      .withEnv('MYSQL_DATABASE', process.env.MYSQL_DATABASE as string)
-      .withEnv('DEFAULT_DB_RUN_MIGRATIONS', process.env.DEFAULT_DB_RUN_MIGRATIONS as string)
-      .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
-      .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
-      .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
-      .withWaitStrategy('nest-test-app', Wait.forLogMessage(/Server started on port = 9000/))
-      .withWaitStrategy("mysql-e2e-test", Wait.forLogMessage(/ready for connections./))
-      .up();
+      await setupEnv();
+
+      connection = await createConnection({ 
+        type: "mysql", 
+        host: '127.0.0.1', 
+        port: 6033, 
+        username: process.env.MYSQL_USER, 
+        password: process.env.MYSQL_PASSWORD, 
+        database: process.env.MYSQL_DATABASE
+      });
     } catch (error) {
       console.log(error);
-    }
-
-    const mysqlContainer = environment.getContainer("mysql-e2e-test");
-      
-    console.log('Environment up and running'); // no log
-
-   // await mysqlContainer.logs();
-    //await mysqlContainer.exec(["-i", "-t","mysql-e2e-test", "bash"])
-
-
-    /* connection = getConnection();
-    console.log('connection');
-    queryRunner = connection.createQueryRunner();
-    console.log('queryRunner');
-    await queryRunner.connect(); */
-    console.log(mysqlContainer);
+    };
 
     passwordGenerated = generateString(12);
     userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
@@ -119,24 +85,16 @@ describe("AuthController (e2e)", () => {
       password: "Kdasd34e3423r",
     };
 
-    //done();
+    done();
   });
 
   it("/auth (POST) - login - success (should return token)", async (done) => {
-    await request('http://localhost:9000/api')
-      .get("/users")
-      .expect(200)
-      .then(({ body }: request.Response) => {
-        console.log(body);
-      });
-
 
     await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
       .then(({ body }: request.Response) => {
-        console.log('result',createUserDto);
         userId = body.id;
       });
 
@@ -230,7 +188,7 @@ describe("AuthController (e2e)", () => {
         expect(body).toEqual(registerUserExpectedResult);
       });
 
-    await queryRunner.query(
+    await connection.query(
       "DELETE FROM `users` WHERE `email`='Desoul40@mail.ru'"
     );
 
@@ -254,7 +212,7 @@ describe("AuthController (e2e)", () => {
         message: "User with this email already exists",
       });
 
-    await queryRunner.query(
+    await connection.query(
       "DELETE FROM `users` WHERE `email`='Desoul40@mail.ru'"
     );
 
@@ -267,7 +225,7 @@ describe("AuthController (e2e)", () => {
       .send(invalidTypeCreateUserDto)
       .expect(400, ["email - invalid email", "password - must be a string"]);
 
-    await queryRunner.query(
+    await connection.query(
       "DELETE FROM `users` WHERE `email`='Desoul40@mail.ru'"
     );
 
@@ -275,9 +233,13 @@ describe("AuthController (e2e)", () => {
   });
 
   afterAll(async (done) => {
-   // await app.close();
-   // await downEnv();
-   await environment.down();
+    try {
+      await connection.close();
+      await downEnv();
+    } catch (error) {
+      console.log(error);
+    };
+    
     done();
   });
 });

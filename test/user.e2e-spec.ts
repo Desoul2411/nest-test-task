@@ -1,26 +1,21 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { INestApplication } from "@nestjs/common";
+jest.useFakeTimers();
+jest.setTimeout(60000);
+
 import * as request from "supertest";
-import { AppModule } from "../src/app.module";
+import * as path from "path";
 import { CreateUserDto } from "../src/modules/users/dto/create-user.dto";
 import { UpdateUserDto } from "../src/modules/users/dto/update-user.dto";
-import { Connection, getConnection } from "typeorm";
+import { Connection, createConnection } from "typeorm";
 import { generateString } from "../src/utils/generators.utils";
 import * as bcrypt from "bcrypt";
 import { User } from "../src/modules/users/entities/user.entity";
 import { LoginUserDto } from "../src/modules/users/dto/login-user-dto";
-import { QueryRunner } from "typeorm";
 import { UserDeleted } from "../src/types/user.type";
-import * as dotenv from "dotenv";
-//const { GenericContainer } = require("testcontainers");
-/* const path = require("path");
-const { DockerComposeEnvironment } = require("testcontainers"); */
+import { DockerComposeEnvironment, Wait } from "testcontainers";
+import { downEnv, setupEnv } from "./environment";
 
 describe("UsersController (e2e)", () => {
-  let app: INestApplication;
-  let queryRunner: QueryRunner;
   let connection: Connection;
-  //let environment;
 
   let userId: string;
   let unexistingUserId: string;
@@ -38,30 +33,21 @@ describe("UsersController (e2e)", () => {
   let token: string;
 
   beforeAll(async (done) => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    try {
+      await setupEnv();
 
-    app = module.createNestApplication();
-    app.get(Connection);
-    await app.init();
+      connection = await createConnection({ 
+        type: "mysql", 
+        host: '127.0.0.1', 
+        port: 6033, 
+        username: process.env.MYSQL_USER, 
+        password: process.env.MYSQL_PASSWORD, 
+        database: process.env.MYSQL_DATABASE
+      });
+    } catch (error) {
+      console.log(error);
+    };
 
-    connection = getConnection();
-    queryRunner = connection.createQueryRunner();
-    await queryRunner.connect();
-
-
-    //testcontainers
-    /* const composeFilePath = path.resolve(__dirname, '/');
-    const composeFile = "docker-compose.test.yml";
-
-    console.log('composeFilePath',composeFilePath );
-
-    environment = await new DockerComposeEnvironment(composeFilePath, composeFile).up();
-
-    console.log('environment', environment);
- */
-    
     unexistingUserId = "df229c80-7432-4951-9f21-a1c5f803a333";
     passwordGenerated = generateString(12);
     userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
@@ -130,7 +116,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it("/users (POST) - create - success (should return created user)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -143,13 +129,13 @@ describe("UsersController (e2e)", () => {
         expect(body.id).toEqual(expect.any(String));
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it('/users (POST) - create - fail (response status 400 with error message "User with this email already exists")', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -157,7 +143,7 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(400, {
@@ -165,13 +151,13 @@ describe("UsersController (e2e)", () => {
         message: "User with this email already exists",
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it("/users (POST) - create - fail (response status 400 with some validation message - invalid password and email)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(invalidTypeCreateUserDto)
       .expect(400, ["email - invalid email", "password - must be a string"]);
@@ -180,7 +166,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it("/users (GET) - getAllUsers - success (should return users array)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -188,7 +174,7 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .get("/users")
       .expect("Content-Type", /json/)
       .expect(200)
@@ -201,13 +187,13 @@ describe("UsersController (e2e)", () => {
         expect(body[0].id).toBeDefined();
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it("/users (UPDATE) - update - success (should return updated user)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -215,19 +201,19 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await queryRunner.query(
+    await connection.query(
       "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
         userPasswordHashed +
         "','ADMIN', 'slava', '20.11.1988')"
     );
 
-    const { body } = await request(app.getHttpServer())
+    const { body } = await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(loginAdminDto);
 
     token = body.token;
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .put(`/users/${userId}`)
       .set("Authorization", "Bearer " + token)
       .send(updateUserDto)
@@ -240,9 +226,9 @@ describe("UsersController (e2e)", () => {
         expect(body.id).toEqual(expect.any(String));
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
-    await queryRunner.query(
+    await connection.query(
       "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
     );
 
@@ -250,7 +236,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!")', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .put(`/users/${userId}`)
       .send(updateUserDto)
       .expect(401, {
@@ -262,7 +248,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when role is USER)', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -270,13 +256,13 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    const { body } = await request(app.getHttpServer())
+    const { body } = await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(loginUserDto);
 
     token = body.token;
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .put(`/users/${userId}`)
       .set("Authorization", "Bearer " + token)
       .send(updateUserDto)
@@ -285,25 +271,25 @@ describe("UsersController (e2e)", () => {
         message: "Access forbidden!",
       });
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
     done();
   });
 
   it('/users (UPDATE) - update - fail (response status 404 with message "No such user!")', async (done) => {
-    await queryRunner.query(
+    await connection.query(
       "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
         userPasswordHashed +
         "','ADMIN', 'slava', '20.11.1988')"
     );
 
-    const { body } = await request(app.getHttpServer())
+    const { body } = await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(loginAdminDto);
 
     token = body.token;
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .put(`/users/${unexistingUserId}`)
       .set("Authorization", "Bearer " + token)
       .send(updateUserDto)
@@ -312,7 +298,7 @@ describe("UsersController (e2e)", () => {
         message: "No such user!",
       });
 
-    await queryRunner.query(
+    await connection.query(
       "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
     );
 
@@ -320,7 +306,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it("/users (UPDATE) - update - fail (response status 400 with some validation message)", async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -328,19 +314,19 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await queryRunner.query(
+    await connection.query(
       "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
         userPasswordHashed +
         "','ADMIN', 'slava', '20.11.1988')"
     );
 
-    const { body } = await request(app.getHttpServer())
+    const { body } = await request('http://localhost:9000/api')
       .post("/auth/login")
       .send(loginAdminDto);
 
     token = body.token;
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .put(`/users/${userId}`)
       .set("Authorization", "Bearer " + token)
       .send(invalidUpdateUserDto)
@@ -349,9 +335,9 @@ describe("UsersController (e2e)", () => {
         "birthdate - The field must not be empty!",
       ]);
 
-    await request(app.getHttpServer()).delete(`/users/${userId}`).expect(200);
+    await request('http://localhost:9000/api').delete(`/users/${userId}`).expect(200);
 
-    await queryRunner.query(
+    await connection.query(
       "DELETE FROM `users` WHERE `email`='Desoul25@mail.ru'"
     );
 
@@ -359,7 +345,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it('/users (DELETE) - delete - success (should return deleted user object with status 200")', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -367,7 +353,7 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .delete(`/users/${userId}`)
       .expect(200, deletedUserResponseData);
 
@@ -375,7 +361,7 @@ describe("UsersController (e2e)", () => {
   });
 
   it('/users (DELETE) - delete - fail (should return 404 with message "No such user!")', async (done) => {
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .post("/users")
       .send(createUserDto)
       .expect(201)
@@ -383,14 +369,14 @@ describe("UsersController (e2e)", () => {
         userId = body.id;
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .delete(`/users/${unexistingUserId}`)
       .expect(404, {
         statusCode: 404,
         message: "No such user!",
       });
 
-    await request(app.getHttpServer())
+    await request('http://localhost:9000/api')
       .delete(`/users/${userId}`)
       .expect(200, deletedUserResponseData);
 
@@ -398,8 +384,13 @@ describe("UsersController (e2e)", () => {
   });
 
   afterAll(async (done) => {
-    await app.close();
-    //await environment.down();
+    try {
+      await connection.close();
+      await downEnv();
+    } catch (error) {
+      console.log(error);
+    };
+    
     done();
   });
 });
