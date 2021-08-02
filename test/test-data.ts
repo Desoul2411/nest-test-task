@@ -1,8 +1,7 @@
 import { generateString } from "../src/utils/generators.utils";
 
-const passwordGenerated = generateString(12);
+//const passwordGenerated = generateString(12);
 const userPasswordHashed = generateString(12);
-
 
 export const createUserDto = {
   email: "Desoul40@mail.ru",
@@ -10,4 +9,3 @@ export const createUserDto = {
   name: "John",
   birthdate: "20.11.88",
 };
-

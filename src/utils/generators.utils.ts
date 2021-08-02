@@ -7,3 +7,8 @@ export const generateString = (length: number): string => {
   }
   return str;
 };
+
+export const generateRandomNumber = (min: number, max: number): number => {
+  const randomNumber = Math.floor(Math.random() * (max - min)) + min;
+  return randomNumber;
+};

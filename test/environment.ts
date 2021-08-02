@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from 'path';
 import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from 'testcontainers';
 
 const composeFile = 'docker-compose.e2e.yml';
@@ -28,14 +28,14 @@ export class Environment {
       .withEnv('DEFAULT_DB_DROP_SCHEMA', process.env.DEFAULT_DB_DROP_SCHEMA as string)
       .withEnv('DEFAULT_DB_LOGGING', process.env.DEFAULT_DB_LOGGING as string)
       .withEnv('PRIVATE_KEY', process.env.PRIVATE_KEY as string)
-      .withWaitStrategy('nest-test-app', Wait.forLogMessage(/Server started on port = 9000/))
-      .withWaitStrategy("mysql-e2e-test", Wait.forLogMessage(/ready for connections./))
+      .withWaitStrategy('nest-test-app', Wait.forLogMessage(`Server started on port = ${process.env.PORT}`))
+      .withWaitStrategy('mysql-e2e-test', Wait.forLogMessage(/ready for connections./))
       .up();
-  };
-      
+  }
+
   public getEnvironment(): StartedDockerComposeEnvironment {
     return this.environment;
-  };
+  }
 
   public async waitForLog(container_name: string, log: string): Promise<void> {
     const logs = await this.environment.getContainer(container_name).logs();
@@ -54,8 +54,8 @@ export class Environment {
           reject();
         });
     });
-  };
-};
+  }
+}
 
 const environmentInstance = Environment.Instance;
 
