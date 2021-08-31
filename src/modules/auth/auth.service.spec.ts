@@ -97,7 +97,7 @@ describe("AuthService", () => {
   });
 
   describe("loginUser", () => {
-    it("should call the inetrnal functions with correct parameters and return token object", async () => {
+    it("should call the inetrnal functions with correct parameters and return token object when user try to log in with correct login data", async () => {
       const validateUserSpy = jest
         .spyOn(authService, "validateUser")
         .mockResolvedValue(userData);
@@ -115,7 +115,7 @@ describe("AuthService", () => {
       expect(res).toEqual(tokenResult);
     });
 
-    it('should throw an error with status 401 and validation message "Invalid email or password"', async () => {
+    it('should throw an error with status 401 and validation message "Invalid email or password when user try to log in with invalid password or email"', async () => {
       jest
         .spyOn(authService, "validateUser")
         .mockRejectedValue(
@@ -131,7 +131,7 @@ describe("AuthService", () => {
       }
     });
 
-    it('should throw an error with status 404 and message "No such user!" if user with such email is not found"', async () => {
+    it('should throw an error with status 404 and message "No such user!" when user try to log in with an email that is not registered in the database"', async () => {
       jest
         .spyOn(authService, "validateUser")
         .mockRejectedValue(new NotFoundException({ message: "No such user!" }));
@@ -144,29 +144,10 @@ describe("AuthService", () => {
         expect(e.status).toBe(404);
       }
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(authService, "validateUser")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      jest.spyOn(authService, "generateToken").mockResolvedValue(tokenResult);
-      try {
-        await authService.loginUser(loginUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("registerUser", () => {
-    it("should call the internal functions with correct parameters and return registration success message ", async () => {
+    it("should call the internal functions with correct parameters and return registration success message", async () => {
       const getUserByEmailSpy = jest
         .spyOn(usersService, "getUserByEmail")
         .mockResolvedValue(undefined);
@@ -187,7 +168,7 @@ describe("AuthService", () => {
       expect(res).toEqual({ message: "Registered successfully!" });
     });
 
-    it('should throw an error with status 400 and message "User with this email already exists"', async () => {
+    it('should throw an error with status 400 and message "User with this email already exists" when user try to register with an email that has already been registered', async () => {
       jest.spyOn(usersService, "getUserByEmail").mockResolvedValue(userData);
 
       jest
@@ -199,27 +180,6 @@ describe("AuthService", () => {
       } catch (e) {
         expect(e.message).toBe("User with this email already exists");
         expect(e.status).toBe(400);
-      }
-    });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(usersService, "getUserByEmail")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      jest
-        .spyOn(usersService, "createUser")
-        .mockResolvedValue(createUserExpectedResult);
-      try {
-        await authService.registerUser(registerUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
       }
     });
   });
@@ -236,28 +196,10 @@ describe("AuthService", () => {
       expect(JwtSignSpy).toHaveBeenCalledWith(userDataToToken);
       expect(res).toEqual(tokenResult);
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(jwtService, "sign")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          ) as never
-        );
-
-      try {
-        await authService.generateToken(userData);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("validateUser", () => {
-    it("should return user data object ", async () => {
+    it("should return user data object if the data provided is valid", async () => {
       const getUsderByEmailSpy = jest
         .spyOn(usersService, "getUserByEmail")
         .mockResolvedValue(userData);
@@ -277,7 +219,7 @@ describe("AuthService", () => {
       expect(res).toEqual(userData);
     });
 
-    it('should throw an error with status 404 and message "No such user!" if user with such email is not found', async () => {
+    it('should throw an error with status 404 and message "No such user!" if user with email provided is not found', async () => {
       jest.spyOn(usersService, "getUserByEmail").mockResolvedValue(undefined);
       jest.spyOn(bcrypt, "compare").mockResolvedValue(true);
       try {
@@ -288,7 +230,7 @@ describe("AuthService", () => {
       }
     });
 
-    it('should throw an error with status 401 and message "Invalid password!" if password is invalid', async () => {
+    it('should throw an error with status 401 and message "Invalid password!" if password provided is invalid', async () => {
       jest.spyOn(usersService, "getUserByEmail").mockResolvedValue(userData);
       jest.spyOn(bcrypt, "compare").mockResolvedValue(false);
       try {
@@ -296,24 +238,6 @@ describe("AuthService", () => {
       } catch (e) {
         expect(e.message).toBe("Invalid password!");
         expect(e.status).toBe(401);
-      }
-    });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(usersService, "getUserByEmail")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-      jest.spyOn(bcrypt, "compare").mockResolvedValue(true);
-      try {
-        await authService.validateUser(loginUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
       }
     });
   });

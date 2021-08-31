@@ -41,7 +41,10 @@ describe('AuthController (e2e)', () => {
     } catch (error) {
       console.log(error);
     }
+    done();
+  });
 
+  beforeEach(async (done) => {
     passwordGenerated = generateString(12);
     userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
 
@@ -63,11 +66,6 @@ describe('AuthController (e2e)', () => {
       message: 'Registered successfully!',
     };
 
-    loginUserDto = {
-      email: 'Desoul40@mail.ru',
-      password: passwordGenerated,
-    };
-
     invalidLoginUserDto = {
       email: 'Desoulmail.ru',
       password: generateRandomNumber(0, 1000000),
@@ -82,11 +80,25 @@ describe('AuthController (e2e)', () => {
       email: 'Desoul45@mail.ru',
       password: generateString(12),
     };
-
     done();
   });
 
   it('/auth (POST) - login - success (should return token)', async (done) => {
+    const passwordGenerated = generateString(12);
+    const userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
+
+    const createUserDto = {
+      email: 'Desoul40@mail.ru',
+      password: userPasswordHashed,
+      name: 'John',
+      birthdate: '20.11.88',
+    };
+
+    const loginUserDto = {
+      email: 'Desoul40@mail.ru',
+      password: passwordGenerated,
+    };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)

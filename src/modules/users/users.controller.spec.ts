@@ -111,63 +111,32 @@ describe("UsersController", () => {
   });
 
   describe("getAll", () => {
-    it("should be called", async () => {
+    it('should call "getAllUser" function once when called', async () => {
       await usersController.getAll();
       expect(getAllUserMock).toHaveBeenCalledTimes(1);
     });
 
-    it("should return users array", async () => {
+    it("should return users array when called", async () => {
       getAllUserMock.mockResolvedValue(getAllUsersExpextedResult);
       expect(await usersController.getAll()).toEqual(getAllUsersExpextedResult);
-    });
-
-    it("should throw an error with status 500 and error message - fail", async () => {
-      getAllUserMock.mockResolvedValue(
-        new HttpException(
-          "INTERNAL_SERVER_ERROR",
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
-      try {
-        await usersController.getAll();
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
     });
   });
 
   describe("create", () => {
-    it("should be called with passed data once", async () => {
+    it('should call "createUser" function with passed data once during user creation', async () => {
       await usersController.create(createUserDataDto);
       expect(createUserMock).toHaveBeenCalledTimes(1);
       expect(createUserMock).toHaveBeenCalledWith(createUserDataDto);
     });
 
-    it("should return created user object", async () => {
+    it("should return created user object during user creation", async () => {
       createUserMock.mockResolvedValue(createdUserExpectedResult);
       expect(await usersController.create(createUserDataDto)).toEqual(
         createdUserExpectedResult
       );
     });
 
-    it("should throw an error with status 500 and error message - fail", async () => {
-      createUserMock.mockResolvedValue(
-        new HttpException(
-          "INTERNAL_SERVER_ERROR",
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
-
-      try {
-        await usersController.create(createUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
-
-    it('should throw an error with status 400 and message "User with this email already exists" - fail', async () => {
+    it('should throw an error with status 400 and message "User with this email already exists" if user with email provided has been already registered  - fail', async () => {
       createUserMock.mockResolvedValue(
         new HttpException(
           "User with this email already exists",
@@ -184,13 +153,13 @@ describe("UsersController", () => {
   });
 
   describe("update", () => {
-    it("should be called with passed data once - success", async () => {
+    it("should be called with passed data once during user update - success", async () => {
       await usersController.update(userId, updateUserDataDto);
       expect(updateUserMock).toHaveBeenCalledTimes(1);
       expect(updateUserMock).toHaveBeenCalledWith(userId, updateUserDataDto);
     });
 
-    it("should return updated user object - success", async () => {
+    it("should return updated user object if update data provided is valid - success", async () => {
       updateUserMock.mockResolvedValue(updatedUserExpectedResult);
 
       expect(await usersController.update(userId, updateUserDataDto)).toEqual(
@@ -198,23 +167,7 @@ describe("UsersController", () => {
       );
     });
 
-    it("should throw an error with status 500 and error message - fail", async () => {
-      updateUserMock.mockRejectedValue(
-        new HttpException(
-          "INTERNAL_SERVER_ERROR",
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
-
-      try {
-        await usersController.update(userId, updateUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
-
-    it("should throw an error with status 404 and error message - fail", async () => {
+    it("should throw an error with status 404 and error message if userId provided doesn't exist in the database - fail", async () => {
       updateUserMock.mockRejectedValue(new NotFoundException("No such user!"));
 
       try {
@@ -227,7 +180,7 @@ describe("UsersController", () => {
   });
 
   describe("delete", () => {
-    it("should be called with passed params and return confirmation message - success", async () => {
+    it('should call "deleteUserById" function with passed params and return confirmation message - success', async () => {
       deleteUserByIdMock.mockResolvedValue(deleteUserExpectedResult);
       const res = await usersController.delete(userId);
       expect(deleteUserByIdMock).toHaveBeenCalledTimes(1);
@@ -235,7 +188,7 @@ describe("UsersController", () => {
       expect(res).toEqual(deleteUserExpectedResult);
     });
 
-    it("should throw an error with status 404 and error message - fail", async () => {
+    it("should throw an error with status 404 and error message if userId provided doesn't exist in the database - fail", async () => {
       deleteUserByIdMock.mockRejectedValue(
         new NotFoundException("No such user!")
       );
@@ -245,22 +198,6 @@ describe("UsersController", () => {
       } catch (e) {
         expect(e.message).toBe("No such user!");
         expect(e.status).toBe(404);
-      }
-    });
-
-    it("should throw an error with status 500 and error message - fail", async () => {
-      deleteUserByIdMock.mockRejectedValue(
-        new HttpException(
-          "INTERNAL_SERVER_ERROR",
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
-
-      try {
-        await usersController.delete(userId);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
       }
     });
   });

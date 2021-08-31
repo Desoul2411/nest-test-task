@@ -86,7 +86,6 @@ export class UsersController {
   })
   @Roles("ADMIN")
   @UseGuards(RolesGuard)
-  // @UseFilters(new HttpExceptionFilter())
   @Put(":id")
   async update(
     @Param("id") id: string,

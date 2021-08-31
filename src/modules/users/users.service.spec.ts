@@ -113,7 +113,7 @@ describe("UsersService", () => {
   });
 
   describe("createUser", () => {
-    it("should call the repository with correct paramaters and return created user object - success", async () => {
+    it("should call the repository with correct paramaters and return created user object when create user - success", async () => {
       const userRepositorySaveSpy = jest
         .spyOn(userRepository, "save")
         .mockResolvedValue(createUserExpectedResult);
@@ -127,7 +127,7 @@ describe("UsersService", () => {
       expect(res).toEqual(createUserExpectedResult);
     });
 
-    it('should throw an error with status 400 and message "User with this email already exists" - fail', async () => {
+    it('should throw an error with status 400 and message "User with this email already exists" if email provided already exists in database - fail', async () => {
       jest
         .spyOn(userRepository, "save")
         .mockRejectedValue(
@@ -144,28 +144,10 @@ describe("UsersService", () => {
         expect(e.status).toBe(400);
       }
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500 - fail", async () => {
-      jest
-        .spyOn(userRepository, "save")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      try {
-        await usersService.createUser(createUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("getAllUsers", () => {
-    it("should call the repository and return array of users", async () => {
+    it("should call the repository and return array of users when called", async () => {
       const userRepositoryFindSpy = jest
         .spyOn(userRepository, "find")
         .mockResolvedValue(getAllUsersExpextedResult);
@@ -175,28 +157,10 @@ describe("UsersService", () => {
       expect(userRepositoryFindSpy).toHaveBeenCalledTimes(1);
       expect(res).toEqual(getAllUsersExpextedResult);
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(userRepository, "find")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      try {
-        await usersService.getAllUsers();
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("getUserByEmail", () => {
-    it("should call the repository with correct paramaters and return user object", async () => {
+    it("should call the repository with correct paramaters and return user object if called with an user email that exists in the database", async () => {
       const userRepositoryFindOneSpy = jest
         .spyOn(userRepository, "findOne")
         .mockResolvedValue(findOneExpectedResult);
@@ -206,28 +170,10 @@ describe("UsersService", () => {
       expect(userRepositoryFindOneSpy).toHaveBeenCalledTimes(1);
       expect(res).toEqual(findOneExpectedResult);
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(userRepository, "findOne")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      try {
-        await usersService.getUserByEmail(userEmail);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("getUserById", () => {
-    it("should call the repository with correct paramaters and return user object", async () => {
+    it("should call the repository with correct paramaters and return user object if called with an userId that exists in the database", async () => {
       const userRepositoryFindOneSpy = jest
         .spyOn(userRepository, "findOne")
         .mockResolvedValue(findOneExpectedResult);
@@ -238,7 +184,7 @@ describe("UsersService", () => {
       expect(res).toEqual(findOneExpectedResult);
     });
 
-    it('should throw an error with status 404 and message "No such user!"', async () => {
+    it('should throw an error with status 404 and message "No such user!" if called with an userId that doesnt exist in the database', async () => {
       jest
         .spyOn(userRepository, "findOne")
         .mockRejectedValue(new NotFoundException("No such user!"));
@@ -250,28 +196,10 @@ describe("UsersService", () => {
         expect(e.status).toBe(404);
       }
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(userRepository, "findOne")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      try {
-        await usersService.getUserById(userId);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("updateUser", () => {
-    it("should call the repository with correct paramaters and return updated user object", async () => {
+    it("should call internal functions with correct paramaters and return updated user object if called with valid data", async () => {
       const getUserByIdSpy = jest
         .spyOn(usersService, "getUserById")
         .mockResolvedValue(findOneExpectedResult);
@@ -287,7 +215,7 @@ describe("UsersService", () => {
       expect(res).toEqual(updatedUserExpectedResult);
     });
 
-    it('should throw an error with status 404 and message "No such user!"', async () => {
+    it('should throw an error with status 404 and message "No such user!" if called with an userId that doesnt exist in the database', async () => {
       jest
         .spyOn(usersService, "getUserById")
         .mockRejectedValue(new NotFoundException("No such user!"));
@@ -303,32 +231,10 @@ describe("UsersService", () => {
         expect(e.status).toBe(404);
       }
     });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(usersService, "getUserById")
-        .mockResolvedValue(findOneExpectedResult);
-
-      jest
-        .spyOn(userRepository, "save")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      try {
-        await usersService.updateUser(userId, updateUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("deleteUserById", () => {
-    it("should call the repository with correct paramaters and return updated user object", async () => {
+    it("should call internal functions with correct paramaters and return deleted user object if called with userId that exists in database", async () => {
       const getUserByIdSpy = jest
         .spyOn(usersService, "getUserById")
         .mockResolvedValue(findOneExpectedResult);
@@ -347,7 +253,7 @@ describe("UsersService", () => {
       expect(res).toEqual(removeExpectedResultSuccess);
     });
 
-    it('should throw an error with status 404 and message "No such user!"', async () => {
+    it('should throw an error with status 404 and message "No such user!" if called with userId that doesnt exists in database', async () => {
       jest
         .spyOn(usersService, "getUserById")
         .mockRejectedValue(new NotFoundException("No such user!"));
@@ -361,28 +267,6 @@ describe("UsersService", () => {
       } catch (e) {
         expect(e.message).toBe("No such user!");
         expect(e.status).toBe(404);
-      }
-    });
-
-    it("should throw INTERNAL_SERVER_ERROR with status 500", async () => {
-      jest
-        .spyOn(usersService, "getUserById")
-        .mockResolvedValue(findOneExpectedResult);
-
-      jest
-        .spyOn(userRepository, "remove")
-        .mockRejectedValue(
-          new HttpException(
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR
-          )
-        );
-
-      try {
-        await usersService.updateUser(userId, updateUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
       }
     });
   });

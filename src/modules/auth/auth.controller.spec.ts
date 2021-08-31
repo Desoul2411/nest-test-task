@@ -21,23 +21,12 @@ describe("AuthController", () => {
   const registerUserMock = jest.fn();
   const mockValue = {};
 
-  const passwordGenerated = generateString(12);
-
-  const loginUserDataDto: LoginUserDto = {
-    email: "desoul2411@gmail.com",
-    password: passwordGenerated,
-  };
+  let registerUserDataDto: CreateUserDto;
+  let loginUserDataDto: LoginUserDto;
 
   const loginUserExpectedResult: TokenResponse = {
     token:
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs",
-  };
-
-  const registerUserDataDto: CreateUserDto = {
-    email: "desoul2411@gmail.com",
-    password: passwordGenerated,
-    name: "John",
-    birthdate: "20.11.88",
   };
 
   const registerUserExpectedResult: ReigestrationSuccessResponse = {
@@ -69,70 +58,50 @@ describe("AuthController", () => {
     }).compile();
 
     authController = moduleRef.get<AuthController>(AuthController);
+
+    registerUserDataDto = {
+      email: "desoul2411@gmail.com",
+      password: generateString(12),
+      name: "John",
+      birthdate: "20.11.88",
+    };
+
+    loginUserDataDto = {
+      email: "desoul2411@gmail.com",
+      password: generateString(12),
+    };
   });
 
   describe("login", () => {
-    it("should be called with passed data once", async () => {
+    it('should call "loginUser" function with passed data once when user try to log in', async () => {
       await authController.login(loginUserDataDto);
       expect(loginUserMock).toHaveBeenCalledTimes(1);
       expect(loginUserMock).toHaveBeenCalledWith(loginUserDataDto);
     });
 
-    it("should return token - success", async () => {
+    it("should return token when user try to log in with correct login data - success", async () => {
       loginUserMock.mockResolvedValue(loginUserExpectedResult);
       expect(await authController.login(loginUserDataDto)).toEqual(
         loginUserExpectedResult
       );
     });
-
-    it("should throw an error with status 500 and error message - fail", async () => {
-      loginUserMock.mockResolvedValue(
-        new HttpException(
-          "INTERNAL_SERVER_ERROR",
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
-
-      try {
-        await authController.login(loginUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
   });
 
   describe("registration", () => {
-    it("should be called with passed data once", async () => {
+    it('should call "registerUser" function with passed data once when user try to register', async () => {
       await authController.registration(registerUserDataDto);
       expect(registerUserMock).toHaveBeenCalledTimes(1);
       expect(registerUserMock).toHaveBeenCalledWith(registerUserDataDto);
     });
 
-    it('should return confirmation message "Registered successfully!"', async () => {
+    it('should return confirmation message "Registered successfully!" when user try to register with valid data', async () => {
       registerUserMock.mockResolvedValue(registerUserExpectedResult);
       expect(await authController.registration(registerUserDataDto)).toEqual(
         registerUserExpectedResult
       );
     });
 
-    it("should throw an error with status 500 and error message - fail", async () => {
-      registerUserMock.mockResolvedValue(
-        new HttpException(
-          "INTERNAL_SERVER_ERROR",
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
-
-      try {
-        await authController.login(loginUserDataDto);
-      } catch (e) {
-        expect(e.message).toBe("INTERNAL_SERVER_ERROR");
-        expect(e.status).toBe(500);
-      }
-    });
-
-    it('should throw an error with status 400 and error message "User with this email already exists" - fail', async () => {
+    it('should throw an error with status 400 and error message "User with this email already exists" when user try to register with an email that already exists - fail', async () => {
       registerUserMock.mockRejectedValue(
         new HttpException(
           "User with this email already exists",

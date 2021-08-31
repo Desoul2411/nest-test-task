@@ -38,15 +38,11 @@ export class UsersService {
   }
 
   async getAllUsers(): Promise<User[]> {
-    const users = await this.userRepository.find();
-
-    return users;
+    return this.userRepository.find();
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({ email });
-
-    return user;
+    return this.userRepository.findOne({ email });
   }
 
   async getUserById(id: string): Promise<User> {
