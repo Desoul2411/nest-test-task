@@ -114,7 +114,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (POST) - create - success (should return created user)', async (done) => {
+  it('/users (POST) - create - success (should return created user when try to create user with valid and correct data)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -133,7 +133,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (POST) - create - fail (response status 400 with error message "User with this email already exists")', async (done) => {
+  it('/users (POST) - create - fail (response status 400 with error message "User with this email already exists" when try to create user providing an email that already exists in the database)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -152,7 +152,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (POST) - create - fail (response status 400 with some validation message - invalid password and email)', async (done) => {
+  it('/users (POST) - create - fail (response status 400 with some validation message when try to create user with invalid data)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(invalidTypeCreateUserDto)
@@ -188,7 +188,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (UPDATE) - update - success (should return updated user)', async (done) => {
+  it('/users (UPDATE) - update - success (should return updated user when try to update user with valid data)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -227,7 +227,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!")', async (done) => {
+  it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!" when unauthorized user try to update user data)', async (done) => {
     await request(BASE_API_URL).put(`/users/${userId}`).send(updateUserDto).expect(401, {
       statusCode: 401,
       message: 'User is not authorized!',
@@ -236,7 +236,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when role is USER)', async (done) => {
+  it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when user whose role is not ADMIN try to update user data)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -263,7 +263,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (UPDATE) - update - fail (response status 404 with message "No such user!")', async (done) => {
+  it('/users (UPDATE) - update - fail (response status 404 with message "No such user!" when try to update data providing userID that doesnt exist in the datbase) ', async (done) => {
     await connection.query(
       "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
         userPasswordHashed +
@@ -288,7 +288,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (UPDATE) - update - fail (response status 400 with some validation message)', async (done) => {
+  it('/users (UPDATE) - update - fail (response status 400 with some validation message when try to update user with invalid data)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -320,7 +320,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (DELETE) - delete - success (should return deleted user object with status 200")', async (done) => {
+  it('/users (DELETE) - delete - success (should return deleted user object with status 200 when try to delete user with userId that exists in the database") ', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -334,7 +334,7 @@ describe('UsersController (e2e)', () => {
     done();
   });
 
-  it('/users (DELETE) - delete - fail (should return 404 with message "No such user!")', async (done) => {
+  it('/users (DELETE) - delete - fail (should return 404 with message "No such user!" when try to delete user with userId that doesnt exist in the database )', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
