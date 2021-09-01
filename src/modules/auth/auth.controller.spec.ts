@@ -13,6 +13,7 @@ import {
   TokenResponse,
 } from "src/types/auth.type";
 import { CreateUserDto } from "../users/dto/create-user.dto";
+import { register_user_data, token_response } from "./test-data/auth.test-data";
 
 describe("AuthController", () => {
   let authController: AuthController;
@@ -23,11 +24,7 @@ describe("AuthController", () => {
 
   let registerUserDataDto: CreateUserDto;
   let loginUserDataDto: LoginUserDto;
-
-  const loginUserExpectedResult: TokenResponse = {
-    token:
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs",
-  };
+  let loginUserExpectedResult: TokenResponse;
 
   const registerUserExpectedResult: ReigestrationSuccessResponse = {
     message: "Registered successfully!",
@@ -58,28 +55,21 @@ describe("AuthController", () => {
     }).compile();
 
     authController = moduleRef.get<AuthController>(AuthController);
-
-    registerUserDataDto = {
-      email: "desoul2411@gmail.com",
-      password: generateString(12),
-      name: "John",
-      birthdate: "20.11.88",
-    };
-
-    loginUserDataDto = {
-      email: "desoul2411@gmail.com",
-      password: generateString(12),
-    };
   });
 
   describe("login", () => {
     it('should call "loginUser" function with passed data once when user try to log in', async () => {
+      loginUserDataDto = {...register_user_data, password: generateString(12)};
+
       await authController.login(loginUserDataDto);
       expect(loginUserMock).toHaveBeenCalledTimes(1);
       expect(loginUserMock).toHaveBeenCalledWith(loginUserDataDto);
     });
 
     it("should return token when user try to log in with correct login data - success", async () => {
+      loginUserDataDto = {...register_user_data, password: generateString(12)};
+      loginUserExpectedResult = {...token_response};
+      
       loginUserMock.mockResolvedValue(loginUserExpectedResult);
       expect(await authController.login(loginUserDataDto)).toEqual(
         loginUserExpectedResult
@@ -89,12 +79,16 @@ describe("AuthController", () => {
 
   describe("registration", () => {
     it('should call "registerUser" function with passed data once when user try to register', async () => {
+      registerUserDataDto = {...register_user_data, password: generateString(12)};
+
       await authController.registration(registerUserDataDto);
       expect(registerUserMock).toHaveBeenCalledTimes(1);
       expect(registerUserMock).toHaveBeenCalledWith(registerUserDataDto);
     });
 
     it('should return confirmation message "Registered successfully!" when user try to register with valid data', async () => {
+      registerUserDataDto = {...register_user_data, password: generateString(12)};
+
       registerUserMock.mockResolvedValue(registerUserExpectedResult);
       expect(await authController.registration(registerUserDataDto)).toEqual(
         registerUserExpectedResult
@@ -102,6 +96,8 @@ describe("AuthController", () => {
     });
 
     it('should throw an error with status 400 and error message "User with this email already exists" when user try to register with an email that already exists - fail', async () => {
+      registerUserDataDto = {...register_user_data, password: generateString(12)};
+
       registerUserMock.mockRejectedValue(
         new HttpException(
           "User with this email already exists",

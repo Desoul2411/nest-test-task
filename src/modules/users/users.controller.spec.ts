@@ -9,6 +9,15 @@ import { JwtService } from "@nestjs/jwt";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserDeleted } from "src/types/user.type";
+import {
+  create_user_dto,
+  create_user_result,
+  user_id,
+  update_user_dto,
+  update_user_result,
+  get_all_users_result,
+  delete_user_result,
+} from "./test-data/users.test-data";
 
 describe("UsersController", () => {
   let usersController: UsersController;
@@ -19,67 +28,14 @@ describe("UsersController", () => {
   const getAllUserMock = jest.fn();
   const updateUserMock = jest.fn();
   const deleteUserByIdMock = jest.fn();
+  const userId: string = user_id;
 
-  let passwordGenerated = generateString(64);
-
-  const createUserDataDto: CreateUserDto = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    name: "slava",
-    birthdate: "20.11.1988",
-  };
-
-  const createdUserExpectedResult: User = {
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-  };
-
-  const userId = "df229c80-7432-4951-9f21-a1c5f803a738";
-
-  const updateUserDataDto: UpdateUserDto = {
-    name: "John",
-    birthdate: "20.11.1995",
-  };
-
-  const updatedUserExpectedResult: User = {
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "John",
-    birthdate: "20.11.1995",
-  };
-
-  const getAllUsersExpextedResult: User[] = [
-    {
-      id: "df229c80-7432-4951-9f21-a1c5f803a738",
-      email: "Desoul40@mail.ru",
-      password: passwordGenerated,
-      role: "USER",
-      name: "John",
-      birthdate: "20.11.1995",
-    },
-    {
-      id: "df229c80-7432-4951-9f21-a1c5f803a739",
-      email: "Jack25@mail.ru",
-      password: passwordGenerated,
-      role: "USER",
-      name: "Jack",
-      birthdate: "14.11.1990",
-    },
-  ];
-
-  const deleteUserExpectedResult: UserDeleted = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-  };
+  let createUserDataDto: CreateUserDto;
+  let createdUserExpectedResult: User;
+  let updateUserDataDto: UpdateUserDto;
+  let updatedUserExpectedResult: User;
+  let getAllUsersExpextedResult: User[];
+  let deleteUserExpectedResult: UserDeleted;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -107,7 +63,6 @@ describe("UsersController", () => {
     }).compile();
 
     usersController = moduleRef.get<UsersController>(UsersController);
-    passwordGenerated = generateString(64);
   });
 
   describe("getAll", () => {
@@ -117,6 +72,8 @@ describe("UsersController", () => {
     });
 
     it("should return users array when called", async () => {
+      getAllUsersExpextedResult = [...get_all_users_result];
+
       getAllUserMock.mockResolvedValue(getAllUsersExpextedResult);
       expect(await usersController.getAll()).toEqual(getAllUsersExpextedResult);
     });
@@ -124,12 +81,23 @@ describe("UsersController", () => {
 
   describe("create", () => {
     it('should call "createUser" function with passed data once during user creation', async () => {
+      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+
       await usersController.create(createUserDataDto);
       expect(createUserMock).toHaveBeenCalledTimes(1);
       expect(createUserMock).toHaveBeenCalledWith(createUserDataDto);
     });
 
     it("should return created user object during user creation", async () => {
+      const createUserDataDto = {
+        ...create_user_dto,
+        password: generateString(12),
+      };
+      createdUserExpectedResult = {
+        ...create_user_result,
+        password: generateString(12),
+      };
+
       createUserMock.mockResolvedValue(createdUserExpectedResult);
       expect(await usersController.create(createUserDataDto)).toEqual(
         createdUserExpectedResult
@@ -137,6 +105,8 @@ describe("UsersController", () => {
     });
 
     it('should throw an error with status 400 and message "User with this email already exists" if user with email provided has been already registered  - fail', async () => {
+      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+
       createUserMock.mockResolvedValue(
         new HttpException(
           "User with this email already exists",
@@ -154,12 +124,20 @@ describe("UsersController", () => {
 
   describe("update", () => {
     it("should be called with passed data once during user update - success", async () => {
+      updateUserDataDto = { ...update_user_dto };
+
       await usersController.update(userId, updateUserDataDto);
       expect(updateUserMock).toHaveBeenCalledTimes(1);
       expect(updateUserMock).toHaveBeenCalledWith(userId, updateUserDataDto);
     });
 
     it("should return updated user object if update data provided is valid - success", async () => {
+      updateUserDataDto = { ...update_user_dto };
+      updatedUserExpectedResult = {
+        ...update_user_result,
+        password: generateString(12),
+      };
+
       updateUserMock.mockResolvedValue(updatedUserExpectedResult);
 
       expect(await usersController.update(userId, updateUserDataDto)).toEqual(
@@ -168,6 +146,8 @@ describe("UsersController", () => {
     });
 
     it("should throw an error with status 404 and error message if userId provided doesn't exist in the database - fail", async () => {
+      updateUserDataDto = { ...update_user_dto };
+
       updateUserMock.mockRejectedValue(new NotFoundException("No such user!"));
 
       try {
@@ -181,6 +161,8 @@ describe("UsersController", () => {
 
   describe("delete", () => {
     it('should call "deleteUserById" function with passed params and return confirmation message - success', async () => {
+      deleteUserExpectedResult = { ...delete_user_result };
+
       deleteUserByIdMock.mockResolvedValue(deleteUserExpectedResult);
       const res = await usersController.delete(userId);
       expect(deleteUserByIdMock).toHaveBeenCalledTimes(1);

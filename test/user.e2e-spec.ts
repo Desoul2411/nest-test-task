@@ -12,14 +12,21 @@ import { LoginUserDto } from '../src/modules/users/dto/login-user-dto';
 import { UserDeleted } from '../src/types/user.type';
 import { downEnv, setupEnv } from './environment';
 import { BASE_API_URL } from './constants';
+import {
+  create_user_dto,
+  invalid_type_create_user_dto,
+  deleted_user_response_data,
+  update_user_dto,
+  uniexisting_user_id,
+  invalid_update_user_dto,
+  updated_user_response,
+  login_admin_dto,
+} from './test-data/auth-user.test-data';
 
 describe('UsersController (e2e)', () => {
   let connection: Connection;
-
   let userId: string;
   let unexistingUserId: string;
-  let passwordGenerated: string;
-  let userPasswordHashed: string;
   let createUserDto: CreateUserDto;
   let invalidTypeCreateUserDto;
   let deletedUserResponseData: UserDeleted;
@@ -30,6 +37,8 @@ describe('UsersController (e2e)', () => {
   let loginAdminDto: LoginUserDto;
   let loginUserDto: LoginUserDto;
   let token: string;
+  let password: string;
+  let userPasswordHashed: string;
 
   beforeAll(async (done) => {
     try {
@@ -47,42 +56,18 @@ describe('UsersController (e2e)', () => {
       console.log(error);
     }
 
-    unexistingUserId = 'df229c80-7432-4951-9f21-a1c5f803a333';
-    passwordGenerated = generateString(12);
-    userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
+    done();
+  });
 
-    loginAdminDto = {
-      email: 'Desoul25@mail.ru',
-      password: passwordGenerated,
-    };
+  beforeEach(async (done) => {
+    password = generateString(12);
+    userPasswordHashed = await bcrypt.hash(password, 5);
+    createUserDto = { ...create_user_dto, password: userPasswordHashed };
 
-    createUserDto = {
-      email: 'Desoul40@mail.ru',
-      password: userPasswordHashed,
-      name: 'John',
-      birthdate: '20.11.88',
-    };
+    done();
+  });
 
-    invalidTypeCreateUserDto = {
-      email: 'Desoul40mail.ru',
-      password: generateRandomNumber(0, 100000),
-      name: 'John',
-      birthdate: '20.11.88',
-    };
-
-    loginUserDto = {
-      email: 'Desoul40@mail.ru',
-      password: passwordGenerated,
-    };
-
-    deletedUserResponseData = {
-      email: 'Desoul40@mail.ru',
-      password: userPasswordHashed,
-      role: 'USER',
-      name: 'John',
-      birthdate: '20.11.88',
-    };
-
+  it('/users (POST) - create - success (should return created user when try to create user with valid and correct data)', async (done) => {
     createdUserExpectedResult = {
       id: 'df229c80-7432-4951-9f21-a1c5f803a738',
       email: 'Desoul40@mail.ru',
@@ -92,29 +77,6 @@ describe('UsersController (e2e)', () => {
       birthdate: '20.11.88',
     };
 
-    updateUserDto = {
-      name: 'Slava',
-      birthdate: '20.11.90',
-    };
-
-    invalidUpdateUserDto = {
-      name: 3773,
-      birthdate: '',
-    };
-
-    updatedUserExpectedResult = {
-      id: 'df229c80-7432-4951-9f21-a1c5f803a738',
-      email: 'Desoul40@mail.ru',
-      password: userPasswordHashed,
-      role: 'USER',
-      name: 'Slava',
-      birthdate: '20.11.90',
-    };
-
-    done();
-  });
-
-  it('/users (POST) - create - success (should return created user when try to create user with valid and correct data)', async (done) => {
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -153,6 +115,8 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (POST) - create - fail (response status 400 with some validation message when try to create user with invalid data)', async (done) => {
+    invalidTypeCreateUserDto = { ...invalid_type_create_user_dto, password: generateRandomNumber(0, 10000) };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(invalidTypeCreateUserDto)
@@ -189,6 +153,10 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (UPDATE) - update - success (should return updated user when try to update user with valid data)', async (done) => {
+    loginAdminDto = { ...login_admin_dto, password };
+    updateUserDto = { ...update_user_dto };
+    updatedUserExpectedResult = { ...updated_user_response, password: userPasswordHashed };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -215,7 +183,7 @@ describe('UsersController (e2e)', () => {
       .then(({ body }: request.Response) => {
         expect(body.email).toEqual(updatedUserExpectedResult.email);
         expect(body.name).toEqual(updatedUserExpectedResult.name);
-        expect(body.password).toEqual(createdUserExpectedResult.password);
+        expect(body.password).toEqual(updatedUserExpectedResult.password);
         expect(body.birthdate).toEqual(updatedUserExpectedResult.birthdate);
         expect(body.id).toEqual(expect.any(String));
       });
@@ -228,6 +196,8 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!" when unauthorized user try to update user data)', async (done) => {
+    updateUserDto = { ...update_user_dto };
+
     await request(BASE_API_URL).put(`/users/${userId}`).send(updateUserDto).expect(401, {
       statusCode: 401,
       message: 'User is not authorized!',
@@ -237,6 +207,13 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (UPDATE) - update - fail (response status 403 with message "Access forbidden!" when user whose role is not ADMIN try to update user data)', async (done) => {
+    updateUserDto = { ...update_user_dto };
+
+    loginUserDto = {
+      email: 'Desoul40@mail.ru',
+      password,
+    };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -264,6 +241,10 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (UPDATE) - update - fail (response status 404 with message "No such user!" when try to update data providing userID that doesnt exist in the datbase) ', async (done) => {
+    unexistingUserId = uniexisting_user_id;
+    loginAdminDto = { ...login_admin_dto, password };
+    updateUserDto = { ...update_user_dto };
+
     await connection.query(
       "INSERT INTO `users` (`email`,`password`, `role`, `name`, `birthdate`) VALUES('Desoul25@mail.ru','" +
         userPasswordHashed +
@@ -289,6 +270,9 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (UPDATE) - update - fail (response status 400 with some validation message when try to update user with invalid data)', async (done) => {
+    invalidUpdateUserDto = { ...invalid_update_user_dto };
+    loginAdminDto = { ...login_admin_dto, password };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -321,6 +305,8 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (DELETE) - delete - success (should return deleted user object with status 200 when try to delete user with userId that exists in the database") ', async (done) => {
+    deletedUserResponseData = { ...deleted_user_response_data, password: userPasswordHashed };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -335,6 +321,9 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (DELETE) - delete - fail (should return 404 with message "No such user!" when try to delete user with userId that doesnt exist in the database )', async (done) => {
+    deletedUserResponseData = { ...deleted_user_response_data, password: userPasswordHashed };
+    unexistingUserId = uniexisting_user_id;
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)

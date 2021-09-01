@@ -14,6 +14,15 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { LoginUserDto } from "../users/dto/login-user-dto";
 import { CreateUserDto } from "../users/dto/create-user.dto";
+import {
+  login_user_data,
+  user_data,
+  user_data_to_token,
+  register_user_data,
+  create_user_result,
+  token_value,
+  user_email,
+} from "./test-data/auth.test-data";
 
 describe("AuthService", () => {
   let usersService: UsersService;
@@ -26,52 +35,16 @@ describe("AuthService", () => {
     public async findOne(): Promise<void> {}
   }
 
-  const passwordGenerated = generateString(12);
-  const passwordHashed = bcrypt.hash(passwordGenerated, 5);
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs";
-  const userEmail = "Desoul40@mail.ru";
+  const token: string = token_value;
+  const userEmail: string = user_email;
   const signMock = jest.fn(() => token);
+  const tokenResult = { token: token_value };
 
-  const loginUserDataDto: LoginUserDto = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-  };
-
-  const userData: User = {
-    email: "Desoul40@mail.ru",
-    password: passwordHashed,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-  };
-
-  const userDataToToken = {
-    userId: "df229c80-7432-4951-9f21-a1c5f803a738",
-    role: "USER",
-  };
-
-  const registerUserDataDto: CreateUserDto = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    name: "slava",
-    birthdate: "20.11.1988",
-  };
-
-  const createUserExpectedResult: User = {
-    email: "Desoul40@mail.ru",
-    password: passwordHashed,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-  };
-
-  const tokenResult = {
-    token:
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyODRmNDg1Ni1jODNtLTExZWItkTJlNi0wMjQyYWMxNTAwMDIiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE2MjMyMzIzMDYsImV4cCI6MTYyMzMxODcwNn0.cfCpuIGVKW2j9bzRhCPChTq5CW8iEwajhs63TZk_RZs",
-  };
+  let loginUserDataDto: LoginUserDto;
+  let userData: User;
+  let userDataToToken;
+  let registerUserDataDto: CreateUserDto;
+  let createUserExpectedResult: User;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -98,6 +71,9 @@ describe("AuthService", () => {
 
   describe("loginUser", () => {
     it("should call the inetrnal functions with correct parameters and return token object when user try to log in with correct login data", async () => {
+      loginUserDataDto = { ...login_user_data, password: generateString(12) };
+      userData = { ...user_data, password: bcrypt.hash(generateString(12), 5) };
+
       const validateUserSpy = jest
         .spyOn(authService, "validateUser")
         .mockResolvedValue(userData);
@@ -116,6 +92,8 @@ describe("AuthService", () => {
     });
 
     it('should throw an error with status 401 and validation message "Invalid email or password when user try to log in with invalid password or email"', async () => {
+      loginUserDataDto = { ...login_user_data, password: generateString(12) };
+
       jest
         .spyOn(authService, "validateUser")
         .mockRejectedValue(
@@ -132,6 +110,8 @@ describe("AuthService", () => {
     });
 
     it('should throw an error with status 404 and message "No such user!" when user try to log in with an email that is not registered in the database"', async () => {
+      loginUserDataDto = { ...login_user_data, password: generateString(12) };
+
       jest
         .spyOn(authService, "validateUser")
         .mockRejectedValue(new NotFoundException({ message: "No such user!" }));
@@ -148,6 +128,15 @@ describe("AuthService", () => {
 
   describe("registerUser", () => {
     it("should call the internal functions with correct parameters and return registration success message", async () => {
+      registerUserDataDto = {
+        ...register_user_data,
+        password: generateString(12),
+      };
+      createUserExpectedResult = {
+        ...create_user_result,
+        password: bcrypt.hash(generateString(12), 5),
+      };
+
       const getUserByEmailSpy = jest
         .spyOn(usersService, "getUserByEmail")
         .mockResolvedValue(undefined);
@@ -169,6 +158,16 @@ describe("AuthService", () => {
     });
 
     it('should throw an error with status 400 and message "User with this email already exists" when user try to register with an email that has already been registered', async () => {
+      userData = { ...user_data, password: bcrypt.hash(generateString(12), 5) };
+      registerUserDataDto = {
+        ...register_user_data,
+        password: generateString(12),
+      };
+      createUserExpectedResult = {
+        ...create_user_result,
+        password: bcrypt.hash(generateString(12), 5),
+      };
+
       jest.spyOn(usersService, "getUserByEmail").mockResolvedValue(userData);
 
       jest
@@ -186,6 +185,9 @@ describe("AuthService", () => {
 
   describe("generateToken", () => {
     it("should return token object ", async () => {
+      userData = { ...user_data, password: bcrypt.hash(generateString(12), 5) };
+      userDataToToken = { ...user_data_to_token };
+
       const JwtSignSpy = jest
         .spyOn(jwtService, "sign")
         .mockResolvedValue(token as never);
@@ -199,6 +201,9 @@ describe("AuthService", () => {
   });
 
   describe("validateUser", () => {
+    loginUserDataDto = { ...login_user_data, password: generateString(12) };
+    userData = { ...user_data, password: bcrypt.hash(generateString(12), 5) };
+
     it("should return user data object if the data provided is valid", async () => {
       const getUsderByEmailSpy = jest
         .spyOn(usersService, "getUserByEmail")
@@ -220,6 +225,8 @@ describe("AuthService", () => {
     });
 
     it('should throw an error with status 404 and message "No such user!" if user with email provided is not found', async () => {
+      loginUserDataDto = { ...login_user_data, password: generateString(12) };
+
       jest.spyOn(usersService, "getUserByEmail").mockResolvedValue(undefined);
       jest.spyOn(bcrypt, "compare").mockResolvedValue(true);
       try {
@@ -231,6 +238,9 @@ describe("AuthService", () => {
     });
 
     it('should throw an error with status 401 and message "Invalid password!" if password provided is invalid', async () => {
+      loginUserDataDto = { ...login_user_data, password: generateString(12) };
+      userData = { ...user_data, password: bcrypt.hash(generateString(12), 5) };
+
       jest.spyOn(usersService, "getUserByEmail").mockResolvedValue(userData);
       jest.spyOn(bcrypt, "compare").mockResolvedValue(false);
       try {

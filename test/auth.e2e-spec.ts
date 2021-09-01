@@ -10,20 +10,27 @@ import { Connection, createConnection } from 'typeorm';
 import { ReigestrationSuccessResponse } from 'src/types/auth.type';
 import { downEnv, setupEnv } from './environment';
 import { BASE_API_URL } from './constants';
+import {
+  create_user_dto,
+  login_user_dto,
+  invalid_type_create_user_dto,
+  register_user_result,
+  invalid_login_user_dto,
+  invalid_password_dto,
+  unexisting_user_dto,
+} from './test-data/auth-user.test-data';
 
 describe('AuthController (e2e)', () => {
-  //let environment;
   let connection: Connection;
   let userId: string;
-  let passwordGenerated: string;
-  let userPasswordHashed: string;
   let createUserDto: CreateUserDto;
-  let loginUserDto: LoginUserDto;
   let invalidLoginUserDto;
   let invalidTypeCreateUserDto;
   let invalidPasswordDTO: LoginUserDto;
   let unexistingUserDTO: LoginUserDto;
   let registerUserExpectedResult: ReigestrationSuccessResponse;
+  let password: string;
+  let userPasswordHashed: string;
 
   beforeAll(async (done) => {
     try {
@@ -40,63 +47,20 @@ describe('AuthController (e2e)', () => {
     } catch (error) {
       console.log(error);
     }
+
     done();
   });
 
   beforeEach(async (done) => {
-    passwordGenerated = generateString(12);
-    userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
+    password = generateString(12);
+    userPasswordHashed = await bcrypt.hash(password, 5);
+    createUserDto = { ...create_user_dto, password: userPasswordHashed };
 
-    createUserDto = {
-      email: 'Desoul40@mail.ru',
-      password: userPasswordHashed,
-      name: 'John',
-      birthdate: '20.11.88',
-    };
-
-    invalidTypeCreateUserDto = {
-      email: 'Desoul40mail.ru',
-      password: generateRandomNumber(0, 1000000),
-      name: 'John',
-      birthdate: '20.11.88',
-    };
-
-    registerUserExpectedResult = {
-      message: 'Registered successfully!',
-    };
-
-    invalidLoginUserDto = {
-      email: 'Desoulmail.ru',
-      password: generateRandomNumber(0, 1000000),
-    };
-
-    invalidPasswordDTO = {
-      email: 'Desoul40@mail.ru',
-      password: generateString(12),
-    };
-
-    unexistingUserDTO = {
-      email: 'Desoul45@mail.ru',
-      password: generateString(12),
-    };
     done();
   });
 
   it('/auth (POST) - login - success (should return token when user try to log in with valid and correct data)', async (done) => {
-    const passwordGenerated = generateString(12);
-    const userPasswordHashed = await bcrypt.hash(passwordGenerated, 5);
-
-    const createUserDto = {
-      email: 'Desoul40@mail.ru',
-      password: userPasswordHashed,
-      name: 'John',
-      birthdate: '20.11.88',
-    };
-
-    const loginUserDto = {
-      email: 'Desoul40@mail.ru',
-      password: passwordGenerated,
-    };
+    const loginUserDto = { ...login_user_dto, password };
 
     await request(BASE_API_URL)
       .post('/users')
@@ -121,6 +85,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) - login - fail (response status 400 with some validation message when user try to log in with invalid email or password)', async (done) => {
+    invalidLoginUserDto = { ...invalid_login_user_dto, password: generateRandomNumber(0, 10000) };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -140,6 +106,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) - login - fail (response status 401 with message "Invalid email or password" when user try to login with incorrect email or password)', async (done) => {
+    invalidPasswordDTO = { ...invalid_password_dto, password: generateString(12) };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -164,6 +132,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) - login - fail (response status 404 with message "No such user!" when user try to login with email that doesnt exist in the database)', async (done) => {
+    unexistingUserDTO = { ...unexisting_user_dto, password: generateString(12) };
+
     await request(BASE_API_URL)
       .post('/users')
       .send(createUserDto)
@@ -183,6 +153,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/registration (POST) - registration - success (should create new user and return confirmation message with status 201 when user try to register with valid data)', async (done) => {
+    registerUserExpectedResult = { ...register_user_result };
+
     await request(BASE_API_URL)
       .post('/auth/registration')
       .send(createUserDto)
@@ -197,6 +169,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/registration (POST) - registration - fail (response status 400 with message "User with this email already exists" when user try to register with email that already exists in the database))', async (done) => {
+    registerUserExpectedResult = { ...register_user_result };
+
     await request(BASE_API_URL)
       .post('/auth/registration')
       .send(createUserDto)
@@ -216,6 +190,8 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth (POST) - registration - fail (response status 400 with validation messages when user try to register with invalid data)', async (done) => {
+    invalidTypeCreateUserDto = { ...invalid_type_create_user_dto, password: generateRandomNumber(0, 1000000) };
+
     await request(BASE_API_URL)
       .post('/auth/registration')
       .send(invalidTypeCreateUserDto)

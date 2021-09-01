@@ -9,16 +9,25 @@ import { Repository } from "typeorm";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserDeleted } from "src/types/user.type";
+import {
+  create_user_dto,
+  create_user_result,
+  user_id,
+  email,
+  update_user_dto,
+  update_user_result,
+  get_all_users_result,
+  delete_user_result,
+  find_one_expected_result
+} from "./test-data/users.test-data";
 
 describe("UsersService", () => {
   let usersService: UsersService;
   let userRepository: Repository<User>;
 
-  const passwordGenerated = generateString(60);
-
   const mockValue = {};
-  const userEmail = "Desoul40@mail.ru";
-  const userId = "df229c80-7432-4951-9f21-a1c5f803a738";
+  const userEmail: string = email;
+  const userId: string = user_id;
 
   class UserRepositoryFake {
     public async save(): Promise<void> {}
@@ -27,71 +36,13 @@ describe("UsersService", () => {
     public async remove(): Promise<void> {}
   }
 
-  const createUserDataDto: CreateUserDto = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    name: "slava",
-    birthdate: "20.11.1988",
-  };
-
-  const createUserExpectedResult: User = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-  };
-
-  const findOneExpectedResult: User = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-  };
-
-  const updateUserDataDto: UpdateUserDto = {
-    name: "John",
-    birthdate: "20.11.1995",
-  };
-
-  const updatedUserExpectedResult: User = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "John",
-    birthdate: "20.11.1995",
-    id: "df229c80-7432-4951-9f21-a1c5f803a738",
-  };
-
-  const getAllUsersExpextedResult: User[] = [
-    {
-      email: "Desoul40@mail.ru",
-      password: passwordGenerated,
-      role: "USER",
-      name: "John",
-      birthdate: "20.11.1995",
-      id: "df229c80-7432-4951-9f21-a1c5f803a738",
-    },
-    {
-      email: "Jack25@mail.ru",
-      password: passwordGenerated,
-      role: "USER",
-      name: "Jack",
-      birthdate: "14.11.1990",
-      id: "df229c80-7432-4951-9f21-a1c5f803a738",
-    },
-  ];
-
-  const removeExpectedResultSuccess: UserDeleted = {
-    email: "Desoul40@mail.ru",
-    password: passwordGenerated,
-    role: "USER",
-    name: "slava",
-    birthdate: "20.11.1988",
-  };
+  let createUserDataDto: CreateUserDto;
+  let createUserExpectedResult: User;
+  let findOneExpectedResult: User;
+  let updateUserDataDto: UpdateUserDto;
+  let updatedUserExpectedResult: User;
+  let getAllUsersExpextedResult: User[];
+  let removeExpectedResultSuccess: UserDeleted;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -114,6 +65,9 @@ describe("UsersService", () => {
 
   describe("createUser", () => {
     it("should call the repository with correct paramaters and return created user object when create user - success", async () => {
+      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+      createUserExpectedResult = {...create_user_result, password: generateString(12)};
+
       const userRepositorySaveSpy = jest
         .spyOn(userRepository, "save")
         .mockResolvedValue(createUserExpectedResult);
@@ -128,6 +82,8 @@ describe("UsersService", () => {
     });
 
     it('should throw an error with status 400 and message "User with this email already exists" if email provided already exists in database - fail', async () => {
+      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+      
       jest
         .spyOn(userRepository, "save")
         .mockRejectedValue(
@@ -148,6 +104,8 @@ describe("UsersService", () => {
 
   describe("getAllUsers", () => {
     it("should call the repository and return array of users when called", async () => {
+      getAllUsersExpextedResult = { ...get_all_users_result };
+
       const userRepositoryFindSpy = jest
         .spyOn(userRepository, "find")
         .mockResolvedValue(getAllUsersExpextedResult);
@@ -161,6 +119,8 @@ describe("UsersService", () => {
 
   describe("getUserByEmail", () => {
     it("should call the repository with correct paramaters and return user object if called with an user email that exists in the database", async () => {
+      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      
       const userRepositoryFindOneSpy = jest
         .spyOn(userRepository, "findOne")
         .mockResolvedValue(findOneExpectedResult);
@@ -174,6 +134,8 @@ describe("UsersService", () => {
 
   describe("getUserById", () => {
     it("should call the repository with correct paramaters and return user object if called with an userId that exists in the database", async () => {
+      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      
       const userRepositoryFindOneSpy = jest
         .spyOn(userRepository, "findOne")
         .mockResolvedValue(findOneExpectedResult);
@@ -200,6 +162,10 @@ describe("UsersService", () => {
 
   describe("updateUser", () => {
     it("should call internal functions with correct paramaters and return updated user object if called with valid data", async () => {
+      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      updateUserDataDto = { ...update_user_dto };
+      updatedUserExpectedResult = { ...update_user_result, password: generateString(12) };
+
       const getUserByIdSpy = jest
         .spyOn(usersService, "getUserById")
         .mockResolvedValue(findOneExpectedResult);
@@ -216,6 +182,9 @@ describe("UsersService", () => {
     });
 
     it('should throw an error with status 404 and message "No such user!" if called with an userId that doesnt exist in the database', async () => {
+      updateUserDataDto = {...update_user_dto};
+      updatedUserExpectedResult = { ...update_user_result, password: generateString(12) };
+      
       jest
         .spyOn(usersService, "getUserById")
         .mockRejectedValue(new NotFoundException("No such user!"));
@@ -235,6 +204,9 @@ describe("UsersService", () => {
 
   describe("deleteUserById", () => {
     it("should call internal functions with correct paramaters and return deleted user object if called with userId that exists in database", async () => {
+      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      removeExpectedResultSuccess = { ...delete_user_result, password: generateString(12) };
+
       const getUserByIdSpy = jest
         .spyOn(usersService, "getUserById")
         .mockResolvedValue(findOneExpectedResult);
@@ -254,6 +226,8 @@ describe("UsersService", () => {
     });
 
     it('should throw an error with status 404 and message "No such user!" if called with userId that doesnt exists in database', async () => {
+      updateUserDataDto = {...update_user_dto};
+      
       jest
         .spyOn(usersService, "getUserById")
         .mockRejectedValue(new NotFoundException("No such user!"));
