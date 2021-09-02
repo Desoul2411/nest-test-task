@@ -2,7 +2,7 @@ import { getRepositoryToken } from "@nestjs/typeorm";
 import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
 import { User } from "./entities/user.entity";
 import { UsersService } from "./users.service";
-import { generateString } from "../../utils/generators.utils";
+import { Generator as generator } from "../../utils/generator.utils";
 import { Test } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { Repository } from "typeorm";
@@ -65,8 +65,8 @@ describe("UsersService", () => {
 
   describe("createUser", () => {
     it("should call the repository with correct paramaters and return created user object when create user - success", async () => {
-      createUserDataDto = { ...create_user_dto, password: generateString(12) };
-      createUserExpectedResult = {...create_user_result, password: generateString(12)};
+      createUserDataDto = { ...create_user_dto, password: generator.generateString(12) };
+      createUserExpectedResult = {...create_user_result, password: generator.generateString(12)};
 
       const userRepositorySaveSpy = jest
         .spyOn(userRepository, "save")
@@ -82,7 +82,7 @@ describe("UsersService", () => {
     });
 
     it('should throw an error with status 400 and message "User with this email already exists" if email provided already exists in database - fail', async () => {
-      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+      createUserDataDto = { ...create_user_dto, password: generator.generateString(12) };
       
       jest
         .spyOn(userRepository, "save")
@@ -119,7 +119,7 @@ describe("UsersService", () => {
 
   describe("getUserByEmail", () => {
     it("should call the repository with correct paramaters and return user object if called with an user email that exists in the database", async () => {
-      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      findOneExpectedResult = { ...find_one_expected_result, password: generator.generateString(12) };
       
       const userRepositoryFindOneSpy = jest
         .spyOn(userRepository, "findOne")
@@ -134,7 +134,7 @@ describe("UsersService", () => {
 
   describe("getUserById", () => {
     it("should call the repository with correct paramaters and return user object if called with an userId that exists in the database", async () => {
-      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      findOneExpectedResult = { ...find_one_expected_result, password: generator.generateString(12) };
       
       const userRepositoryFindOneSpy = jest
         .spyOn(userRepository, "findOne")
@@ -162,9 +162,9 @@ describe("UsersService", () => {
 
   describe("updateUser", () => {
     it("should call internal functions with correct paramaters and return updated user object if called with valid data", async () => {
-      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
+      findOneExpectedResult = { ...find_one_expected_result, password: generator.generateString(12) };
       updateUserDataDto = { ...update_user_dto };
-      updatedUserExpectedResult = { ...update_user_result, password: generateString(12) };
+      updatedUserExpectedResult = { ...update_user_result, password: generator.generateString(12) };
 
       const getUserByIdSpy = jest
         .spyOn(usersService, "getUserById")
@@ -183,7 +183,7 @@ describe("UsersService", () => {
 
     it('should throw an error with status 404 and message "No such user!" if called with an userId that doesnt exist in the database', async () => {
       updateUserDataDto = {...update_user_dto};
-      updatedUserExpectedResult = { ...update_user_result, password: generateString(12) };
+      updatedUserExpectedResult = { ...update_user_result, password: generator.generateString(12) };
       
       jest
         .spyOn(usersService, "getUserById")
@@ -204,8 +204,8 @@ describe("UsersService", () => {
 
   describe("deleteUserById", () => {
     it("should call internal functions with correct paramaters and return deleted user object if called with userId that exists in database", async () => {
-      findOneExpectedResult = { ...find_one_expected_result, password: generateString(12) };
-      removeExpectedResultSuccess = { ...delete_user_result, password: generateString(12) };
+      findOneExpectedResult = { ...find_one_expected_result, password: generator.generateString(12) };
+      removeExpectedResultSuccess = { ...delete_user_result, password: generator.generateString(12) };
 
       const getUserByIdSpy = jest
         .spyOn(usersService, "getUserById")

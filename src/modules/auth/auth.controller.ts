@@ -1,5 +1,12 @@
 import { Body, Controller, Post, UsePipes } from "@nestjs/common";
-import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from "@nestjs/swagger";
 import { ValidationPipe } from "../../pipes/validation.pipe";
 import {
   ReigestrationSuccessResponse,
@@ -9,7 +16,6 @@ import { CreateUserDto } from "../users/dto/create-user.dto";
 import { LoginUserDto } from "../users/dto/login-user-dto";
 import {
   ErrorEmailExists400,
-  ErrorResponse500,
   ErrorValidation400,
   ErrorResponse404,
   ErrorNotAthorized401,
@@ -22,26 +28,10 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ summary: "Log in" })
-  @ApiResponse({
-    status: 201,
-    description: "Logged in",
-    type: TokenResponse,
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Invalid password!",
-    type: ErrorNotAthorized401,
-  })
-  @ApiResponse({
-    status: 404,
-    description: "No such user!",
-    type: ErrorResponse404,
-  })
-  @ApiResponse({
-    status: 400,
-    description: "Validation error",
-    type: ErrorValidation400,
-  })
+  @ApiCreatedResponse({ description: "Logged in", type: TokenResponse })
+  @ApiUnauthorizedResponse({ description: "Invalid password!", type: ErrorNotAthorized401 })
+  @ApiNotFoundResponse({ description: "No such user!", type: ErrorResponse404 })
+  @ApiBadRequestResponse({ description: "Validation error", type: ErrorValidation400 })
   @UsePipes(ValidationPipe)
   @Post("/login")
   login(@Body() userDto: LoginUserDto): Promise<TokenResponse> {
@@ -49,21 +39,8 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: "Register" })
-  @ApiResponse({
-    status: 201,
-    description: "User registered",
-    type: ReigestrationSuccessResponse,
-  })
-  @ApiResponse({
-    status: 400,
-    description: "Bad request",
-    type: ErrorEmailExists400,
-  })
-  @ApiResponse({
-    status: 500,
-    description: "Internal server error",
-    type: ErrorResponse500,
-  })
+  @ApiCreatedResponse({ description: "User registered", type: ReigestrationSuccessResponse })
+  @ApiBadRequestResponse({ description: "Bad request", type: ErrorEmailExists400 })
   @UsePipes(ValidationPipe)
   @Post("/registration")
   registration(

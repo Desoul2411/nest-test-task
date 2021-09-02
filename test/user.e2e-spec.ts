@@ -5,7 +5,7 @@ import * as request from 'supertest';
 import { CreateUserDto } from '../src/modules/users/dto/create-user.dto';
 import { UpdateUserDto } from '../src/modules/users/dto/update-user.dto';
 import { Connection, createConnection } from 'typeorm';
-import { generateString, generateRandomNumber } from '../src/utils/generators.utils';
+import { Generator as generator } from '../src/utils/generator.utils';
 import * as bcrypt from 'bcrypt';
 import { User } from '../src/modules/users/entities/user.entity';
 import { LoginUserDto } from '../src/modules/users/dto/login-user-dto';
@@ -60,7 +60,7 @@ describe('UsersController (e2e)', () => {
   });
 
   beforeEach(async (done) => {
-    password = generateString(12);
+    password = generator.generateString(12);
     userPasswordHashed = await bcrypt.hash(password, 5);
     createUserDto = { ...create_user_dto, password: userPasswordHashed };
 
@@ -115,7 +115,7 @@ describe('UsersController (e2e)', () => {
   });
 
   it('/users (POST) - create - fail (response status 400 with some validation message when try to create user with invalid data)', async (done) => {
-    invalidTypeCreateUserDto = { ...invalid_type_create_user_dto, password: generateRandomNumber(0, 10000) };
+    invalidTypeCreateUserDto = { ...invalid_type_create_user_dto, password: generator.generateRandomNumber(0, 10000) };
 
     await request(BASE_API_URL)
       .post('/users')

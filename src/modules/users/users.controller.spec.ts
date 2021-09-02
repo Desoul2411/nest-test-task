@@ -3,7 +3,7 @@ import { HttpException, HttpStatus, NotFoundException } from "@nestjs/common";
 import { UsersController } from "./users.controller";
 import { User } from "./entities/user.entity";
 import { UsersService } from "./users.service";
-import { generateString } from "../../utils/generators.utils";
+import { Generator as generator } from "../../utils/generator.utils";
 import { Test } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -81,7 +81,7 @@ describe("UsersController", () => {
 
   describe("create", () => {
     it('should call "createUser" function with passed data once during user creation', async () => {
-      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+      createUserDataDto = { ...create_user_dto, password: generator.generateString(12) };
 
       await usersController.create(createUserDataDto);
       expect(createUserMock).toHaveBeenCalledTimes(1);
@@ -91,11 +91,11 @@ describe("UsersController", () => {
     it("should return created user object during user creation", async () => {
       const createUserDataDto = {
         ...create_user_dto,
-        password: generateString(12),
+        password: generator.generateString(12),
       };
       createdUserExpectedResult = {
         ...create_user_result,
-        password: generateString(12),
+        password: generator.generateString(12),
       };
 
       createUserMock.mockResolvedValue(createdUserExpectedResult);
@@ -105,7 +105,7 @@ describe("UsersController", () => {
     });
 
     it('should throw an error with status 400 and message "User with this email already exists" if user with email provided has been already registered  - fail', async () => {
-      createUserDataDto = { ...create_user_dto, password: generateString(12) };
+      createUserDataDto = { ...create_user_dto, password: generator.generateString(12) };
 
       createUserMock.mockResolvedValue(
         new HttpException(
@@ -135,7 +135,7 @@ describe("UsersController", () => {
       updateUserDataDto = { ...update_user_dto };
       updatedUserExpectedResult = {
         ...update_user_result,
-        password: generateString(12),
+        password: generator.generateString(12),
       };
 
       updateUserMock.mockResolvedValue(updatedUserExpectedResult);

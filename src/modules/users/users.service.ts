@@ -9,6 +9,7 @@ import { Repository } from "typeorm";
 import { User } from "./entities/user.entity";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
+import { DUBLICATE_DB_RECORD_ERROR_CODE } from "./users.constants";
 
 @Injectable()
 export class UsersService {
@@ -28,7 +29,7 @@ export class UsersService {
     try {
       return await this.userRepository.save(user);
     } catch (error) {
-      if (error.errno == 1062) {
+      if (error.errno == DUBLICATE_DB_RECORD_ERROR_CODE) {
         throw new HttpException(
           "User with this email already exists",
           HttpStatus.BAD_REQUEST

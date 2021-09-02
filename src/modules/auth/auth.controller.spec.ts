@@ -4,7 +4,7 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { User } from "../users/entities/user.entity";
 import { UsersService } from "../users/users.service";
-import { generateString } from "../../utils/generators.utils";
+import { Generator as generator } from "../../utils/generator.utils";
 import { Test } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
 import { LoginUserDto } from "../users/dto/login-user-dto";
@@ -59,7 +59,7 @@ describe("AuthController", () => {
 
   describe("login", () => {
     it('should call "loginUser" function with passed data once when user try to log in', async () => {
-      loginUserDataDto = {...register_user_data, password: generateString(12)};
+      loginUserDataDto = {...register_user_data, password: generator.generateString(12)};
 
       await authController.login(loginUserDataDto);
       expect(loginUserMock).toHaveBeenCalledTimes(1);
@@ -67,7 +67,7 @@ describe("AuthController", () => {
     });
 
     it("should return token when user try to log in with correct login data - success", async () => {
-      loginUserDataDto = {...register_user_data, password: generateString(12)};
+      loginUserDataDto = {...register_user_data, password: generator.generateString(12)};
       loginUserExpectedResult = {...token_response};
       
       loginUserMock.mockResolvedValue(loginUserExpectedResult);
@@ -79,7 +79,7 @@ describe("AuthController", () => {
 
   describe("registration", () => {
     it('should call "registerUser" function with passed data once when user try to register', async () => {
-      registerUserDataDto = {...register_user_data, password: generateString(12)};
+      registerUserDataDto = {...register_user_data, password: generator.generateString(12)};
 
       await authController.registration(registerUserDataDto);
       expect(registerUserMock).toHaveBeenCalledTimes(1);
@@ -87,7 +87,7 @@ describe("AuthController", () => {
     });
 
     it('should return confirmation message "Registered successfully!" when user try to register with valid data', async () => {
-      registerUserDataDto = {...register_user_data, password: generateString(12)};
+      registerUserDataDto = {...register_user_data, password: generator.generateString(12)};
 
       registerUserMock.mockResolvedValue(registerUserExpectedResult);
       expect(await authController.registration(registerUserDataDto)).toEqual(
@@ -96,7 +96,7 @@ describe("AuthController", () => {
     });
 
     it('should throw an error with status 400 and error message "User with this email already exists" when user try to register with an email that already exists - fail', async () => {
-      registerUserDataDto = {...register_user_data, password: generateString(12)};
+      registerUserDataDto = {...register_user_data, password: generator.generateString(12)};
 
       registerUserMock.mockRejectedValue(
         new HttpException(

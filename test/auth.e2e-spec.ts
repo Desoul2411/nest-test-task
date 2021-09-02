@@ -3,7 +3,7 @@ jest.setTimeout(80000);
 
 import * as request from 'supertest';
 import { CreateUserDto } from '../src/modules/users/dto/create-user.dto';
-import { generateString, generateRandomNumber } from '../src/utils/generators.utils';
+import { Generator as generator }  from '../src/utils/generator.utils';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from '../src/modules/users/dto/login-user-dto';
 import { Connection, createConnection } from 'typeorm';
@@ -52,7 +52,7 @@ describe('AuthController (e2e)', () => {
   });
 
   beforeEach(async (done) => {
-    password = generateString(12);
+    password = generator.generateString(12);
     userPasswordHashed = await bcrypt.hash(password, 5);
     createUserDto = { ...create_user_dto, password: userPasswordHashed };
 
@@ -85,7 +85,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) - login - fail (response status 400 with some validation message when user try to log in with invalid email or password)', async (done) => {
-    invalidLoginUserDto = { ...invalid_login_user_dto, password: generateRandomNumber(0, 10000) };
+    invalidLoginUserDto = { ...invalid_login_user_dto, password: generator.generateRandomNumber(0, 10000) };
 
     await request(BASE_API_URL)
       .post('/users')
@@ -106,7 +106,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) - login - fail (response status 401 with message "Invalid email or password" when user try to login with incorrect email or password)', async (done) => {
-    invalidPasswordDTO = { ...invalid_password_dto, password: generateString(12) };
+    invalidPasswordDTO = { ...invalid_password_dto, password: generator.generateString(12) };
 
     await request(BASE_API_URL)
       .post('/users')
@@ -132,7 +132,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth/login (POST) - login - fail (response status 404 with message "No such user!" when user try to login with email that doesnt exist in the database)', async (done) => {
-    unexistingUserDTO = { ...unexisting_user_dto, password: generateString(12) };
+    unexistingUserDTO = { ...unexisting_user_dto, password: generator.generateString(12) };
 
     await request(BASE_API_URL)
       .post('/users')
@@ -190,7 +190,7 @@ describe('AuthController (e2e)', () => {
   });
 
   it('/auth (POST) - registration - fail (response status 400 with validation messages when user try to register with invalid data)', async (done) => {
-    invalidTypeCreateUserDto = { ...invalid_type_create_user_dto, password: generateRandomNumber(0, 1000000) };
+    invalidTypeCreateUserDto = { ...invalid_type_create_user_dto, password: generator.generateRandomNumber(0, 1000000) };
 
     await request(BASE_API_URL)
       .post('/auth/registration')

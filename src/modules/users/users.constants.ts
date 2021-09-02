@@ -1,0 +1,1 @@
+export const DUBLICATE_DB_RECORD_ERROR_CODE = 1062;
