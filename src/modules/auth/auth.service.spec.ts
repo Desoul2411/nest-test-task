@@ -1,7 +1,5 @@
 import { getRepositoryToken } from "@nestjs/typeorm";
 import {
-  HttpException,
-  HttpStatus,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";

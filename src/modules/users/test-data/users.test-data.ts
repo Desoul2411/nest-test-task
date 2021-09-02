@@ -1,6 +1,5 @@
 import { generateString } from "../../../utils/generators.utils";
 
-
 export const user_id = "df229c80-7432-4951-9f21-a1c5f803a738";
 export const email = "Desoul40@mail.ru";
 

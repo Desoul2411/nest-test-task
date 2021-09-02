@@ -15,7 +15,6 @@ export class CreateUserDto {
   @IsString({ message: "must be a string" })
   @IsNotEmpty({ message: "the field must not be empty!" })
   readonly password: string;
-  /*     readonly role: string; */
 
   @ApiProperty({ example: "Slava", description: "user name" })
   @IsString({ message: "must be a string" })

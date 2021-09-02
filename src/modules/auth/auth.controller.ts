@@ -65,7 +65,6 @@ export class AuthController {
     type: ErrorResponse500,
   })
   @UsePipes(ValidationPipe)
-  //@UseFilters(new HttpExceptionFilter())
   @Post("/registration")
   registration(
     @Body() userDto: CreateUserDto
