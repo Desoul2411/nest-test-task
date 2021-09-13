@@ -81,7 +81,10 @@ describe("UsersController", () => {
 
   describe("create", () => {
     it('should call "createUser" function with passed data once during user creation', async () => {
-      createUserDataDto = { ...create_user_dto, password: generator.generateString(12) };
+      createUserDataDto = {
+        ...create_user_dto,
+        password: generator.generateString(12),
+      };
 
       await usersController.create(createUserDataDto);
       expect(createUserMock).toHaveBeenCalledTimes(1);
@@ -105,7 +108,10 @@ describe("UsersController", () => {
     });
 
     it('should throw an error with status 400 and message "User with this email already exists" if user with email provided has been already registered  - fail', async () => {
-      createUserDataDto = { ...create_user_dto, password: generator.generateString(12) };
+      createUserDataDto = {
+        ...create_user_dto,
+        password: generator.generateString(12),
+      };
 
       createUserMock.mockResolvedValue(
         new HttpException(

@@ -198,10 +198,7 @@ describe('UsersController (e2e)', () => {
   it('/users (UPDATE) - update - fail (response status 401 with message "User is not authorized!" when unauthorized user try to update user data)', async (done) => {
     updateUserDto = { ...update_user_dto };
 
-    await request(BASE_API_URL).put(`/users/${userId}`).send(updateUserDto).expect(401, {
-      statusCode: 401,
-      message: 'User is not authorized!',
-    });
+    await request(BASE_API_URL).put(`/users/${userId}`).send(updateUserDto).expect(401, { statusCode: 401, message: 'Unauthorized' });
 
     done();
   });

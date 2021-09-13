@@ -6,11 +6,12 @@ import {
   Param,
   Post,
   Put,
+  Request,
   UseGuards,
   UsePipes,
 } from "@nestjs/common";
-import { RolesGuard } from "../auth/roles.guard";
-import { Roles } from "../auth/roles.auth.decorator";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Roles } from "../auth/decorators/roles.auth.decorator";
 import { ValidationPipe } from "../../pipes/validation.pipe";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -34,6 +35,7 @@ import {
   ErrorResponse404,
 } from "../../types/error.type";
 import { UserDeleted } from "../../types/user.type";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 @ApiTags("Users")
 @Controller("users")
@@ -41,7 +43,10 @@ export class UsersController {
   constructor(private readonly userService: UsersService) {}
   @ApiOperation({ summary: "Create user" })
   @ApiCreatedResponse({ description: "User created", type: User })
-  @ApiBadRequestResponse({ description: "Bad request", type: ErrorEmailExists400 })
+  @ApiBadRequestResponse({
+    description: "Bad request",
+    type: ErrorEmailExists400,
+  })
   @UsePipes(ValidationPipe)
   @Post()
   create(@Body() createUserDto: CreateUserDto): Promise<User> {
@@ -57,11 +62,20 @@ export class UsersController {
 
   @ApiOperation({ summary: "Update user" })
   @ApiOkResponse({ description: "User updated", type: User })
-  @ApiNotFoundResponse({ description: "User is not found",type: ErrorResponse404 })
-  @ApiUnauthorizedResponse({ description: "User is not authorized!", type: ErrorUserIsNotAithorized401 })
-  @ApiForbiddenResponse({ description: "Access forbidden", type: ErrorResponse403 })
+  @ApiNotFoundResponse({
+    description: "User is not found",
+    type: ErrorResponse404,
+  })
+  @ApiUnauthorizedResponse({
+    description: "User is not authorized!",
+    type: ErrorUserIsNotAithorized401,
+  })
+  @ApiForbiddenResponse({
+    description: "Access forbidden",
+    type: ErrorResponse403,
+  })
   @Roles("ADMIN")
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Put(":id")
   async update(
     @Param("id") id: string,
@@ -72,7 +86,10 @@ export class UsersController {
 
   @ApiOperation({ summary: "Delete user" })
   @ApiOkResponse({ description: "User deleted", type: UserDeleted })
-  @ApiNotFoundResponse({ description: "User is not found", type: ErrorResponse404 })
+  @ApiNotFoundResponse({
+    description: "User is not found",
+    type: ErrorResponse404,
+  })
   @Delete(":id")
   async delete(@Param("id") id: string): Promise<User> {
     return this.userService.deleteUserById(id);

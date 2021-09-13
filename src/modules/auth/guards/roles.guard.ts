@@ -6,14 +6,12 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { JwtService } from "@nestjs/jwt";
 import { Observable } from "rxjs";
-import { getTokenFromAuthHeader } from "../../helpers/getTokenFromAuthHeader";
-import { ROLE_KEY } from "./roles.auth.decorator";
+import { ROLE_KEY } from "../decorators/roles.auth.decorator";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private jwtService: JwtService, private reflector: Reflector) {}
+  constructor(private reflector: Reflector) {}
 
   canActivate(
     context: ExecutionContext
@@ -22,15 +20,11 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-
     if (!requiredRole) {
       return true;
     }
 
-    const req = context.switchToHttp().getRequest();
-    const token = getTokenFromAuthHeader(req.headers.authorization);
-    const user = this.jwtService.verify(token);
-    req.user = user;
+    const { user } = context.switchToHttp().getRequest();
 
     if (requiredRole.includes(user.role)) {
       return true;
