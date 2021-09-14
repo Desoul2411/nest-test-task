@@ -26,6 +26,7 @@ describe("AuthService", () => {
   let usersService: UsersService;
   let authService: AuthService;
   let jwtService: JwtService;
+ // let client: ClientProxy;
 
   class UserRepositoryFake {
     public async save(): Promise<void> {}
@@ -36,6 +37,7 @@ describe("AuthService", () => {
   const token: string = token_value;
   const userEmail: string = user_email;
   const signMock = jest.fn(() => token);
+  const emitMock = jest.fn();
   const tokenResult = { token: token_value };
 
   let loginUserDataDto: LoginUserDto;
@@ -59,12 +61,19 @@ describe("AuthService", () => {
             sign: signMock,
           },
         },
+        {
+          provide: 'AUTH_LOG_SERVICE',
+          useValue: {
+            emit: emitMock,
+          }
+        }
       ],
     }).compile();
 
     authService = moduleRef.get<AuthService>(AuthService);
     usersService = moduleRef.get<UsersService>(UsersService);
     jwtService = moduleRef.get<JwtService>(JwtService);
+    //client = moduleRef.get<'AUTH_LOG_SERVICE'>('AUTH_LOG_SERVICE');
   });
 
   describe("loginUser", () => {

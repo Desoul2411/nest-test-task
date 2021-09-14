@@ -1,6 +1,7 @@
 import {
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -15,18 +16,23 @@ import {
   TokenResponse,
   ReigestrationSuccessResponse,
 } from "src/types/auth.type";
+import { ClientProxy } from "@nestjs/microservices";
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UsersService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    @Inject("AUTH_LOG_SERVICE") private readonly client: ClientProxy
   ) {}
 
   async loginUser(userDto: LoginUserDto): Promise<TokenResponse> {
     const user = await this.validateUser(userDto);
 
-    if (user) return this.generateToken(user);
+    if (user) {
+      this.logUser(user.id, user.name, user.email);
+      return this.generateToken(user);
+    }
   }
 
   async registerUser(
@@ -78,4 +84,11 @@ export class AuthService {
 
     throw new UnauthorizedException({ message: "Invalid password!" });
   }
+
+  private logUser = (id: string, name: string, email: string): void => {
+    this.client.emit("log_user", {
+      user: { id, name, email },
+      login_date: new Date().toLocaleString(),
+    });
+  };
 }

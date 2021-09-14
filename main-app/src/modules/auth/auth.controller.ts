@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UsePipes } from "@nestjs/common";
+import { Body, Controller, Inject, Post, UsePipes } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -25,13 +25,21 @@ import { AuthService } from "./auth.service";
 @ApiTags("Auth")
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+  ) {}
 
   @ApiOperation({ summary: "Log in" })
   @ApiCreatedResponse({ description: "Logged in", type: TokenResponse })
-  @ApiUnauthorizedResponse({ description: "Invalid password!", type: ErrorNotAthorized401 })
+  @ApiUnauthorizedResponse({
+    description: "Invalid password!",
+    type: ErrorNotAthorized401,
+  })
   @ApiNotFoundResponse({ description: "No such user!", type: ErrorResponse404 })
-  @ApiBadRequestResponse({ description: "Validation error", type: ErrorValidation400 })
+  @ApiBadRequestResponse({
+    description: "Validation error",
+    type: ErrorValidation400,
+  })
   @UsePipes(ValidationPipe)
   @Post("/login")
   login(@Body() userDto: LoginUserDto): Promise<TokenResponse> {
@@ -39,8 +47,14 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: "Register" })
-  @ApiCreatedResponse({ description: "User registered", type: ReigestrationSuccessResponse })
-  @ApiBadRequestResponse({ description: "Bad request", type: ErrorEmailExists400 })
+  @ApiCreatedResponse({
+    description: "User registered",
+    type: ReigestrationSuccessResponse,
+  })
+  @ApiBadRequestResponse({
+    description: "Bad request",
+    type: ErrorEmailExists400,
+  })
   @UsePipes(ValidationPipe)
   @Post("/registration")
   registration(
