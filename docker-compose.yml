@@ -1,0 +1,26 @@
+version: "3.0"
+
+services:
+  main:
+    container_name: test-app
+    build:
+      context: .
+    env_file:
+      - .env
+    ports:
+      - "5000:3000"
+    depends_on:
+      - mysql
+    restart: always
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - dbstore:/var/lib/nest-test
+    restart: always
+volumes:
+  dbstore:

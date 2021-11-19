@@ -1,0 +1,30 @@
+
+version: "3.0"
+
+services:
+  app:
+    container_name: nest-test-app
+    build:
+      context: .
+    working_dir: /app
+    env_file:
+      - ./test/settings/.test.env
+    ports:
+      - "9000:9000"
+    networks:
+      - webnet
+    depends_on:
+      - mysql-e2e-test
+    restart: unless-stopped
+  mysql-e2e-test:
+    container_name: mysql-e2e-test
+    image: mysql:8.0
+    networks:
+      - webnet
+    env_file:
+      - ./test/settings/.test.env
+    ports:
+      - "6033:3306"
+    restart: unless-stopped
+networks:
+  webnet:
